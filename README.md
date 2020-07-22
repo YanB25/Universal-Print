@@ -19,6 +19,15 @@ $ ./bin/main
 hello world!
 ```
 
+## Install & Uninstall
+
+``` bash
+# to install libs and headers
+sudo make install
+# to uninstall
+cat install_manifest.txt | sudo xargs rm -rf
+```
+
 ## clang-format
 
 `clang-format` is an option if you would like to use.
