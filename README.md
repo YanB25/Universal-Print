@@ -1,6 +1,8 @@
 # C++ Project Template
 
-A C++ template for quick start.
+A C++ template to quickly start your own project.
+
+This template includes a simplest runnable helloworld program, which breaks down into a `helloworld` lib (see src/ and include/helloworld/) and an executable (see bin/main.cpp).
 
 ## Compile
 
@@ -30,7 +32,7 @@ cat install_manifest.txt | sudo xargs rm -rf
 
 ## clang-format
 
-`clang-format` is an option if you would like to use.
+`clang-format` is an opt-in if you would like to use.
 
 ``` bash
 sudo apt install clang-format
