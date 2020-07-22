@@ -12,6 +12,13 @@ cmake -DCMAKE_BUILD_TYPE=Debug ..
 make -j8
 ```
 
+## Run
+
+``` bash
+$ ./bin/main
+hello world!
+```
+
 ## clang-format
 
 `clang-format` is an option if you would like to use.
