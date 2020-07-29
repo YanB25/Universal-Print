@@ -14,7 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # dir to include
 set(HELLOWORLD_INCLUDE_DIRECTORIES include)
 
-add_compile_options("-Wall" "-W" "-Wextra")
+add_compile_options("-Wall" "-W" "-Wextra" "-fPIC")
 
 # headers to install
 file(GLOB_RECURSE HELLOWORLD_PUBLIC_HEADER include/*)
