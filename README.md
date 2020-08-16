@@ -37,3 +37,14 @@ cat install_manifest.txt | sudo xargs rm -rf
 ``` bash
 sudo apt install clang-format
 ```
+
+## Doxygen
+
+[doxygen](https://www.doxygen.nl/index.html) is supported if needed.
+
+To generate a document and open it
+
+``` bash
+doxygen Doxyfile
+open html/index.html
+```
