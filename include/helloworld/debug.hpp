@@ -19,27 +19,37 @@
 
 #include "./common.hpp"
 
-#define stderr_print(level, M, ...)     \
-    do                                  \
-    {                                   \
-        const char *__level = level;    \
-        fprintf(stderr,                 \
-                "[%s] %s:%d - " M "\n", \
-                __level,                \
-                __FILE__,               \
-                __LINE__,               \
-                ##__VA_ARGS__);         \
+#define RED "\x1B[31m"
+#define GRN "\x1B[32m"
+#define YEL "\x1B[33m"
+#define BLU "\x1B[34m"
+#define MAG "\x1B[35m"
+#define CYN "\x1B[36m"
+#define WHT "\x1B[37m"
+#define RESET "\x1B[0m"
+
+#define stderr_print(level, COLOR, M, ...)           \
+    do                                               \
+    {                                                \
+        const char *__level = level;                 \
+        fprintf(stderr,                              \
+                COLOR "%s" RESET " %s:%d - " M "\n", \
+                __level,                             \
+                __FILE__,                            \
+                __LINE__,                            \
+                ##__VA_ARGS__);                      \
     } while (0)
 
-#define info(M, ...) stderr_print("Info", M, ##__VA_ARGS__)
-#define warn(M, ...) stderr_print("Warn", M, ##__VA_ARGS__)
-#define error(M, ...) stderr_print("Error", M, ##__VA_ARGS__)
-#define panic(M, ...)                                                        \
-    do                                                                       \
-    {                                                                        \
-        stderr_print("Panic", M, ##__VA_ARGS__);                             \
-        stderr_print("Panic", "Program terminated due to the error above."); \
-        std::terminate();                                                    \
+#define info(M, ...) stderr_print("[Info] ", GRN, M, ##__VA_ARGS__)
+#define warn(M, ...) stderr_print("[Warn] ", YEL, M, ##__VA_ARGS__)
+#define error(M, ...) stderr_print("[Error]", RED, M, ##__VA_ARGS__)
+#define panic(M, ...)                                                    \
+    do                                                                   \
+    {                                                                    \
+        stderr_print("Panic", RED, M, ##__VA_ARGS__);                    \
+        stderr_print(                                                    \
+            "Panic", RED, "Program terminated due to the error above."); \
+        std::terminate();                                                \
     } while (0)
 
 // below is the `if` version
