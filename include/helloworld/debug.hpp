@@ -15,27 +15,31 @@
 #ifndef CHECK_H
 #define CHECK_H
 #include <cstdio>
+#include <exception>
 
 #include "./common.hpp"
 
-#define stderr_print(level, ...)                                       \
-    do                                                                 \
-    {                                                                  \
-        const char *__level = level;                                   \
-        fprintf(stderr, "[%s] %s:%d - ", __level, __FILE__, __LINE__); \
-        fprintf(stderr, __VA_ARGS__);                                  \
-        fprintf(stderr, "\n");                                         \
+#define stderr_print(level, M, ...)     \
+    do                                  \
+    {                                   \
+        const char *__level = level;    \
+        fprintf(stderr,                 \
+                "[%s] %s:%d - " M "\n", \
+                __level,                \
+                __FILE__,               \
+                __LINE__,               \
+                ##__VA_ARGS__);         \
     } while (0)
 
-#define info(...) stderr_print("Info", __VA_ARGS__)
-#define warn(...) stderr_print("Warn", __VA_ARGS__)
-#define error(...) stderr_print("Error", __VA_ARGS__)
-#define panic(...)                                                           \
+#define info(M, ...) stderr_print("Info", M, ##__VA_ARGS__)
+#define warn(M, ...) stderr_print("Warn", M, ##__VA_ARGS__)
+#define error(M, ...) stderr_print("Error", M, ##__VA_ARGS__)
+#define panic(M, ...)                                                        \
     do                                                                       \
     {                                                                        \
-        stderr_print("Panic", __VA_ARGS__);                                  \
+        stderr_print("Panic", M, ##__VA_ARGS__);                             \
         stderr_print("Panic", "Program terminated due to the error above."); \
-        exit(-1);                                                            \
+        std::terminate();                                                    \
     } while (0)
 
 // below is the `if` version
@@ -75,7 +79,7 @@
 
 #ifndef NDEBUG
 // Debug mode
-#define dcheck(cond, ...) check(cond, __VA_ARGS__)
+#define dcheck(cond, ...) check(cond, ##__VA_ARGS__)
 #define dinfo(...) info(__VA_ARGS__)
 #define dwarn(...) warn(__VA_ARGS__)
 #define derror(...) error(__VA_ARGS__)
