@@ -13,6 +13,11 @@ constexpr static uint64_t m2_ops = 2ull * 1000 * 1000;
 constexpr static uint64_t g4_ops = 4ull * 1000 * 1000 * 1000;
 constexpr static uint64_t t1_ops = 1ull * 1000 * 1000 * 1000 * 1000;
 
+constexpr static uint64_t dump_ns = 518ull;
+constexpr static uint64_t us_8 = 8ull * 1000;
+constexpr static uint64_t ms_142 = 142ull * 1000 * 1000;
+constexpr static uint64_t s_42 = 42ull * 1000 * 1000 * 1000;
+
 int main()
 {
     info("%s", hello::smart::toSize(dump).c_str());
@@ -27,6 +32,9 @@ int main()
     info("%s", hello::smart::toOps(g4_ops).c_str());
     info("%s", hello::smart::toOps(t1_ops).c_str());
 
-    info("%s", hello::smart::toOps(g4_ops + m2_ops).c_str());
+    info("%s", hello::smart::nsToLatency(dump_ns).c_str());
+    info("%s", hello::smart::nsToLatency(us_8).c_str());
+    info("%s", hello::smart::nsToLatency(ms_142).c_str());
+    info("%s", hello::smart::nsToLatency(s_42).c_str());
     return 0;
 }

@@ -57,6 +57,23 @@ inline std::string toOps(double ops)
 {
     return toNum(ops) + "ops";
 }
+
+inline std::string nsToLatency(double ns)
+{
+    if (ns < define::K)
+    {
+        return std::to_string(ns) + " ns";
+    }
+    else if (ns < define::M)
+    {
+        return std::to_string(ns / define::K) + " us";
+    }
+    else if (ns < define::G)
+    {
+        return std::to_string(ns / define::M) + " ms";
+    }
+    return std::to_string(ns / define::G) + " s";
+}
 }  // namespace smart
 }  // namespace hello
 #endif
