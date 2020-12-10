@@ -2,6 +2,7 @@
 #define ARG_PARSER_H
 #include <cctype>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <optional>
 #include <set>
@@ -18,10 +19,15 @@ namespace argparser
 class Parser
 {
 public:
+    using Pointer = std::unique_ptr<Parser>;
     Parser(const std::string &description)
         : description_(description),
           flag_manager_(flag::FlagManager::new_instance())
     {
+    }
+    static Pointer new_instance(const std::string &desc = {})
+    {
+        return std::make_unique<Parser>(desc);
     }
     void print_promt() const
     {
@@ -33,7 +39,42 @@ public:
         std::cout << description_ << std::endl << std::endl;
 
         print_usage();
+        print_command();
         flag_manager_->print_flags();
+    }
+    void print_promt(int argc, char *argv[]) const
+    {
+        if (!init_)
+        {
+            std::cerr << "ERR: parse() not called." << std::endl;
+            return;
+        }
+        auto *current_parser = this;
+        for (int i = 1; i < argc; ++i)
+        {
+            std::string key = argv[i];
+            if (flag::is_flag(key))
+            {
+                break;
+            }
+            auto it = sub_parsers_.find(key);
+            if (it == sub_parsers_.end())
+            {
+                break;
+            }
+            current_parser = it->second.get();
+        }
+        current_parser->print_promt();
+    }
+    std::string desc() const
+    {
+        return description_;
+    }
+    Parser &command(const std::string &command, const std::string &desc = {})
+    {
+        sub_parsers_.emplace(command, new_instance(desc));
+        max_command_len_ = std::max(max_command_len_, command.size());
+        return *sub_parsers_[command];
     }
     template <typename T>
     bool flag(T *flag,
@@ -56,17 +97,83 @@ public:
     }
     bool parse(int argc, char *argv[])
     {
-        init_ = true;
         program_name = argv[0];
 
         auto pairs = retrieve(argc, argv);
-        for (const auto &[key, value] : pairs)
+        return do_parse(pairs);
+    }
+
+private:
+    bool init_{false};
+    std::string program_name;
+    std::string description_;
+
+    flag::FlagManager::Pointer flag_manager_;
+    std::unordered_map<std::string, Pointer> sub_parsers_;
+    size_t max_command_len_{0};
+
+    void print_usage() const
+    {
+        if (!flag_manager_->empty())
         {
+            std::cout << "Usage:" << std::endl
+                      << "  " << program_name << " [flag]" << std::endl
+                      << std::endl;
+        }
+    }
+    const flag::FlagManager::Pointer flag_manager() const
+    {
+        return flag_manager_;
+    }
+    void print_command() const
+    {
+        if (!sub_parsers_.empty())
+        {
+            std::cout << "Available Commands:" << std::endl;
+            for (const auto &[command, parser] : sub_parsers_)
+            {
+                std::cout << "  " << command;
+                std::cout << std::string(max_command_len_ + 2, ' ');
+                std::cout << parser->desc() << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    }
+    using FlagPair = std::pair<std::string, std::string>;
+    using FlagPairs = std::list<FlagPair>;
+    bool do_parse(FlagPairs &pairs)
+    {
+        init_ = true;
+
+        for (auto pair_it = pairs.begin(); pair_it != pairs.end(); ++pair_it)
+        {
+            const auto &key = pair_it->first;
+            const auto &value = pair_it->second;
+
+            /**
+             * It is either a flag or a command.
+             * A flag: ./program --test
+             * A command: ./program start
+             *
+             * If it is a command, we delegate the parsing to the sub_parser
+             */
             if (!flag::is_flag(key))
             {
-                std::cerr << "TODO: skip key " << key << std::endl;
-                continue;
+                auto parser_it = sub_parsers_.find(key);
+                if (parser_it == sub_parsers_.end())
+                {
+                    // TODO: response to --help or -h.
+                    std::cerr << "Failed to parse command \"" << key
+                              << "\": use --help for usage." << std::endl;
+                    return false;
+                }
+                auto sub_parser = parser_it->second.get();
+                // remove [begin, pair_it] and pass the remaining to the
+                // sub_parser
+                pairs.erase(pairs.begin(), ++pair_it);
+                return sub_parser->do_parse(pairs);
             }
+
             if (!flag_manager_->apply(key, value))
             {
                 return false;
@@ -87,28 +194,9 @@ public:
         }
         return true;
     }
-
-private:
-    bool init_{false};
-    std::string program_name;
-    std::string description_;
-
-    flag::FlagManager::Pointer flag_manager_;
-
-    void print_usage() const
+    FlagPairs retrieve(int argc, char *argv[])
     {
-        if (!flag_manager_->empty())
-        {
-            std::cout << "Usage:" << std::endl
-                      << "  " << program_name << " [flag]" << std::endl
-                      << std::endl;
-        }
-    }
-    using KVPair = std::tuple<std::string, std::string>;
-    using KVPairs = std::vector<KVPair>;
-    KVPairs retrieve(int argc, char *argv[])
-    {
-        KVPairs ret;
+        FlagPairs ret;
         // skip program name, i start from 1
         for (int i = 1; i < argc; ++i)
         {
@@ -165,14 +253,14 @@ private:
         return ret;
     }
 };  // namespace argparser
-static Parser &init(const std::string &description = {})
+static Parser &init(const std::string &desc)
 {
-    static std::shared_ptr<Parser> parser;
-    if (parser == nullptr)
+    static Parser::Pointer root_parser;
+    if (root_parser == nullptr)
     {
-        parser = std::make_shared<Parser>(description);
+        root_parser = Parser::new_instance(desc);
     }
-    return *parser;
+    return *root_parser;
 }
 }  // namespace argparser
 }  // namespace hello

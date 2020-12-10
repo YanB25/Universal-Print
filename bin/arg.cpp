@@ -30,8 +30,11 @@ int main(int argc, char *argv[])
     parser.flag(&has_init, "--init", "-i", long_paragraph.substr(500), "true");
     parser.flag(&tired, "--tired", "", long_paragraph.substr(700), "4");
     parser.flag(&t2, "--t2", "", long_paragraph.substr(700));
+    auto &start_parser =
+        parser.command("start", "start a node in a multi-node cluster");
+    start_parser.flag(&t2, "--test", "-t", long_paragraph.substr(500));
     parser.parse(argc, argv);
-    parser.print_promt();
+    parser.print_promt(argc, argv);
     std::cout << "time is " << time << std::endl;
     std::cout << "name is " << name << std::endl;
     std::cout << "init is " << has_init << std::endl;

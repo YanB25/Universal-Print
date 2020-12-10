@@ -19,7 +19,7 @@ namespace flag
 class FlagManager
 {
 public:
-    using Pointer = std::unique_ptr<FlagManager>;
+    using Pointer = std::shared_ptr<FlagManager>;
     static Pointer new_instance()
     {
         return std::make_unique<FlagManager>();
