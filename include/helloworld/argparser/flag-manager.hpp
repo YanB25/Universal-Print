@@ -114,6 +114,17 @@ public:
                   << "Flag not found" << std::endl;
         return false;
     }
+    bool contain(const std::string name) const
+    {
+        for (const auto &flag : flags_)
+        {
+            if (flag->match(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     size_t size() const
     {
         return flags_.size();
@@ -139,6 +150,10 @@ public:
     // TODO: make it formator
     void print_flags() const
     {
+        if (empty())
+        {
+            return;
+        }
         std::cout << "Flags:" << std::endl;
         for (const auto &flag : flags_)
         {

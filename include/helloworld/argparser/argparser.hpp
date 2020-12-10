@@ -20,6 +20,8 @@ class Parser
 {
 public:
     using Pointer = std::unique_ptr<Parser>;
+    using FlagPair = std::pair<std::string, std::string>;
+    using FlagPairs = std::list<FlagPair>;
     Parser(const std::string &description)
         : description_(description),
           flag_manager_(flag::FlagManager::new_instance())
@@ -42,24 +44,42 @@ public:
         print_command();
         flag_manager_->print_flags();
     }
-    void print_promt(int argc, char *argv[]) const
+    void print_promt(FlagPairs &pairs) const
     {
-        auto *current_parser = this;
-        for (int i = 1; i < argc; ++i)
+        for (auto it = pairs.begin(); it != pairs.end(); ++it)
         {
-            std::string key = argv[i];
+            const auto &key = it->first;
             if (flag::is_flag(key))
             {
-                break;
+                if (flag_manager_->contain(key))
+                {
+                    // this flag is expected, we can keep going.
+                    continue;
+                }
+                else
+                {
+                    // this flag is not expected, stop here.
+                    break;
+                }
             }
-            auto it = sub_parsers_.find(key);
-            if (it == sub_parsers_.end())
+            else
             {
-                break;
+                // this is a command
+                auto parser_it = sub_parsers_.find(key);
+                if (parser_it == sub_parsers_.end())
+                {
+                    break;
+                }
+                pairs.erase(pairs.begin(), ++it);
+                return parser_it->second->print_promt(pairs);
             }
-            current_parser = it->second.get();
         }
-        current_parser->print_promt();
+        print_promt();
+    }
+    void print_promt(int argc, char *argv[]) const
+    {
+        auto pairs = retrieve(argc, argv);
+        return print_promt(pairs);
     }
     std::string desc() const
     {
@@ -134,8 +154,6 @@ private:
             std::cout << std::endl;
         }
     }
-    using FlagPair = std::pair<std::string, std::string>;
-    using FlagPairs = std::list<FlagPair>;
     bool do_parse(FlagPairs &pairs)
     {
         init_ = true;
@@ -189,7 +207,7 @@ private:
         }
         return true;
     }
-    FlagPairs retrieve(int argc, char *argv[])
+    static FlagPairs retrieve(int argc, char *argv[])
     {
         FlagPairs ret;
         // skip program name, i start from 1

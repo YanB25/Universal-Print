@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
     auto &start_parser =
         parser.command("start", "start a node in a multi-node cluster");
     start_parser.flag(&t2, "--test", "-t", long_paragraph.substr(500));
+    start_parser.command("tpcc", "start tpcc workload");
     parser.parse(argc, argv);
     parser.print_promt(argc, argv);
     std::cout << "time is " << time << std::endl;
