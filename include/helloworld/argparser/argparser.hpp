@@ -44,11 +44,6 @@ public:
     }
     void print_promt(int argc, char *argv[]) const
     {
-        if (!init_)
-        {
-            std::cerr << "ERR: parse() not called." << std::endl;
-            return;
-        }
         auto *current_parser = this;
         for (int i = 1; i < argc; ++i)
         {
