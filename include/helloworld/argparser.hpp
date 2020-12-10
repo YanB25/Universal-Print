@@ -3,6 +3,7 @@
 #include <cctype>
 #include <memory>
 #include <optional>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -196,7 +197,7 @@ public:
     {
         if (!validate_full_flag(full_name))
         {
-            std::cerr << "Failed to register flag " << full_name << ", "
+            std::cerr << "Failed to register flag " << full_name
                       << ": identity not allowed" << std::endl;
             return false;
         }
@@ -205,6 +206,19 @@ public:
             std::cerr << "Failed to register flag " << short_name << "("
                       << full_name << ")"
                       << ": identity not allowed" << std::endl;
+            return false;
+        }
+        if (!unique_full_flag(full_name))
+        {
+            std::cerr << "Failed to register flag " << full_name
+                      << ": flag already registered" << std::endl;
+            return false;
+        }
+        if (!unique_short_flag(full_name))
+        {
+            std::cerr << "Failed to register flag " << short_name << "("
+                      << full_name << ")"
+                      << ": flag already registered" << std::endl;
             return false;
         }
         flags_.emplace_back(ConcreteFlag<T>::make_flag(
@@ -223,6 +237,8 @@ public:
         }
         max_full_name_len_ = std::max(max_full_name_len_, full_name.size());
         max_short_name_len_ = std::max(max_short_name_len_, short_name.size());
+        registered_full_flags_.insert(full_name);
+        registered_short_flags_.insert(short_name);
         return true;
     }
     using KVPair = std::tuple<std::string, std::string>;
@@ -240,6 +256,18 @@ public:
     {
         return name.empty() ||
                (name.size() >= 2 && name[0] == '-' && isalpha(name[1]));
+    }
+    bool unique_full_flag(const std::string &name) const
+    {
+        return registered_full_flags_.find(name) ==
+               registered_full_flags_.end();
+        ;
+    }
+    bool unique_short_flag(const std::string &name) const
+    {
+        return registered_short_flags_.find(name) ==
+               registered_short_flags_.end();
+        ;
     }
     KVPairs retrieve(int argc, char *argv[])
     {
@@ -350,6 +378,8 @@ public:
 
 private:
     std::string description_;
+    std::set<std::string> registered_full_flags_;
+    std::set<std::string> registered_short_flags_;
     std::vector<std::shared_ptr<Flag>> flags_;
     std::vector<bool> required_;
     std::vector<bool> parsed_;
