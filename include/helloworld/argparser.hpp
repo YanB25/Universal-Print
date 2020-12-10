@@ -52,6 +52,10 @@ public:
     }
     bool match(const std::string &key) override
     {
+        if (key.empty())
+        {
+            return false;
+        }
         return key == full_name_ || key == short_name_;
     }
     std::string to_string() const override
@@ -143,7 +147,7 @@ public:
             std::cout << "  ";
             std::cout << std::string(max_short_name_len_ - short_name.size(),
                                      ' ');
-            std::cout << short_name << ", ";
+            std::cout << short_name << (short_name.empty() ? "  " : ", ");
             std::cout << full_name;
             std::cout << std::endl;
             size_t padding_len =
@@ -237,8 +241,18 @@ public:
         }
         max_full_name_len_ = std::max(max_full_name_len_, full_name.size());
         max_short_name_len_ = std::max(max_short_name_len_, short_name.size());
-        registered_full_flags_.insert(full_name);
-        registered_short_flags_.insert(short_name);
+        /**
+         * We allow a flag which does not has a full_name OR a short_name.
+         * In this case, do not insert "" into the map
+         */
+        if (!full_name.empty())
+        {
+            registered_full_flags_.insert(full_name);
+        }
+        if (!short_name.empty())
+        {
+            registered_short_flags_.insert(short_name);
+        }
         return true;
     }
     using KVPair = std::tuple<std::string, std::string>;
@@ -250,7 +264,7 @@ public:
     bool validate_full_flag(const std::string &name) const
     {
         return name.size() >= 3 && name[0] == '-' && name[1] == '-' &&
-               isalpha(name[3]);
+               isalpha(name[2]);
     }
     bool validate_short_flag(const std::string &name) const
     {
