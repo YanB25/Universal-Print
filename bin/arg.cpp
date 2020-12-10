@@ -2,15 +2,30 @@
 
 #include "helloworld/argparser.hpp"
 using namespace hello;
+
+std::string long_paragraph =
+    "Lorem ipsum dolor sit amet, consectetuer adipiscing elit."
+    "Non eram nescius, Brute, cum, quae summis ingeniis exquisitaque "
+    "doctrina philosophi Graeco sermone tractavissent, ea Latinis litteris "
+    "mandaremus, fore ut hic noster labor in varias reprehensiones"
+    "incurreret. Nam quibusdam, et iis quidem non admodum indoctis,"
+    "totum hoc displicet philosophari.Quidam autem non tam id reprehendunt,"
+    "si remissius agatur, sed tantum studium tamque multam operam ponendam in "
+    "eo non arbitrantur.Erunt etiam, et ii quidem eruditi Graecis litteris, "
+    "contemnentes Latinas, qui se dicant in Graecis legendis operam malle"
+    "consumere.Postremo aliquos futuros suspicor,"
+    "qui me ad alias litteras vocent, genus hoc scribendi,"
+    "etsi sit elegans, personae tamen et dignitatis esse negent.";
+
 int main(int argc, char *argv[])
 {
     auto &parser = argparser::init("Simple Commandline tool");
     uint64_t time;
     std::string name;
     bool has_init;
-    parser.flag(&time, "--time", "-t", "The time to test", "4");
-    parser.flag(&name, "--name", "-n", "The name", "default");
-    parser.flag(&has_init, "--init", "-i", "Has Init", "t");
+    parser.flag(&time, "--time", "-t", long_paragraph, "4");
+    parser.flag(&name, "--name", "-n", long_paragraph.substr(300), "default");
+    parser.flag(&has_init, "--init", "-i", long_paragraph.substr(500), "true");
     parser.apply(argc, argv);
     parser.print_promt();
     std::cout << "time is " << time << std::endl;

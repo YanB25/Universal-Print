@@ -19,6 +19,9 @@ public:
     virtual std::string to_string() const = 0;
     virtual bool apply(const std::string &value) = 0;
     virtual bool apply_default() = 0;
+    virtual std::string short_name() const = 0;
+    virtual std::string full_name() const = 0;
+    virtual std::string desc() const = 0;
 };
 template <typename T>
 class ConcreteFlag : public Flag
@@ -63,6 +66,18 @@ public:
         }
         return false;
     }
+    std::string short_name() const override
+    {
+        return short_name_;
+    }
+    std::string full_name() const override
+    {
+        return full_name_;
+    }
+    std::string desc() const override
+    {
+        return desc_;
+    }
     ~ConcreteFlag() = default;
 
 private:
@@ -104,6 +119,55 @@ public:
     void print_promt() const
     {
         std::cout << description_ << std::endl << std::endl;
+
+        print_usage();
+        print_flags();
+    }
+    void print_usage() const
+    {
+        if (!flags_.empty())
+        {
+            std::cout << "Usage:" << std::endl
+                      << "  " << program_name << " [flag]" << std::endl
+                      << std::endl;
+        }
+    }
+    void print_flags() const
+    {
+        std::cout << "Flags:" << std::endl;
+        for (const auto &flag : flags_)
+        {
+            auto short_name = flag->short_name();
+            auto full_name = flag->full_name();
+            std::cout << "  ";
+            std::cout << std::string(max_short_name_len_ - short_name.size(),
+                                     ' ');
+            std::cout << short_name << ", ";
+            std::cout << full_name;
+            std::cout << std::endl;
+            size_t padding_len =
+                2 + max_short_name_len_ + 2 + max_full_name_len_ + 2;
+            auto padding_str = std::string(padding_len, ' ');
+            std::cout << padding_str;
+            auto desc = flag->desc();
+            size_t pos = 0;
+            std::string token;
+            size_t current_column = 0;
+            while ((pos = desc.find(" ")) != std::string::npos)
+            {
+                token = desc.substr(0, pos);
+                current_column += token.size();
+                if (current_column >= 80)
+                {
+                    current_column = 0;
+                    std::cout << std::endl << padding_str;
+                }
+                std::cout << token << " ";
+                desc.erase(0, pos + 1);
+            }
+            std::cout << desc;
+            std::cout << std::endl;
+        }
     }
     template <typename T>
     bool flag(T *flag,
@@ -157,6 +221,8 @@ public:
                 return false;
             }
         }
+        max_full_name_len_ = std::max(max_full_name_len_, full_name.size());
+        max_short_name_len_ = std::max(max_short_name_len_, short_name.size());
         return true;
     }
     using KVPair = std::tuple<std::string, std::string>;
@@ -235,6 +301,8 @@ public:
     }
     bool apply(int argc, char *argv[])
     {
+        program_name = argv[0];
+
         auto pairs = retrieve(argc, argv);
         for (const auto &[key, value] : pairs)
         {
@@ -285,6 +353,9 @@ private:
     std::vector<std::shared_ptr<Flag>> flags_;
     std::vector<bool> required_;
     std::vector<bool> parsed_;
+    std::string program_name;
+    size_t max_full_name_len_{0};
+    size_t max_short_name_len_{0};
 };  // namespace argparser
 static Parser &init(const std::string &description = {})
 {
