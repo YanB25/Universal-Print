@@ -1,6 +1,8 @@
 #ifndef ARG_PARSER_H
 #define ARG_PARSER_H
+#include <cctype>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -26,7 +28,7 @@ public:
                  const std::string &full_name,
                  const std::string &short_name,
                  const std::string &desc,
-                 const std::string &default_val)
+                 const std::optional<std::string> &default_val)
         : flag_(flag),
           full_name_(full_name),
           short_name_(short_name),
@@ -39,7 +41,7 @@ public:
         const std::string &full_name,
         const std::string &short_name,
         const std::string &desc,
-        const std::string &default_val = {})
+        const std::optional<std::string> &default_val = std::nullopt)
     {
         return std::make_shared<ConcreteFlag<T>>(
             flag, full_name, short_name, desc, default_val);
@@ -55,7 +57,11 @@ public:
     bool apply(const std::string &value) override;
     bool apply_default() override
     {
-        return apply(default_);
+        if (default_.has_value())
+        {
+            return apply(default_.value());
+        }
+        return false;
     }
     ~ConcreteFlag() = default;
 
@@ -64,7 +70,7 @@ private:
     std::string full_name_;
     std::string short_name_;
     std::string desc_;
-    std::string default_;
+    std::optional<std::string> default_;
 };
 template <typename T>
 bool ConcreteFlag<T>::apply(const std::string &value)
@@ -72,6 +78,21 @@ bool ConcreteFlag<T>::apply(const std::string &value)
     std::istringstream iss(value);
     iss >> *flag_;
     return !iss.fail();
+}
+template <>
+bool ConcreteFlag<bool>::apply(const std::string &value)
+{
+    if (value.empty() || value == "1" || value == "true")
+    {
+        *flag_ = true;
+        return true;
+    }
+    else if (value == "0" || value == "false")
+    {
+        *flag_ = false;
+        return true;
+    }
+    return false;
 }
 
 class Parser
@@ -85,33 +106,74 @@ public:
         std::cout << description_ << std::endl << std::endl;
     }
     template <typename T>
-    void flag(T *flag,
+    bool flag(T *flag,
               const std::string &full_name,
               const std::string &short_name,
               const std::string &desc,
-              const std::string &default_val)
+              const std::optional<std::string> &default_val)
     {
-        flags_.emplace_back(ConcreteFlag<T>::make_flag(
-            flag, full_name, short_name, desc, default_val));
-        required_.emplace_back(false);
-        parsed_.emplace_back(false);
+        return reg_flag(flag, full_name, short_name, desc, default_val, false);
     }
     template <typename T>
-    void flag(T *flag,
+    bool flag(T *flag,
               const std::string &full_name,
               const std::string &short_name,
               const std::string &desc)
     {
-        flags_.emplace_back(
-            ConcreteFlag<T>::make_flag(flag, full_name, short_name, desc, T{}));
-        required_.emplace_back(true);
+        return reg_flag(flag, full_name, short_name, desc, std::nullopt, true);
+    }
+    template <typename T>
+    bool reg_flag(T *flag,
+                  const std::string &full_name,
+                  const std::string &short_name,
+                  const std::string &desc,
+                  const std::optional<std::string> &default_val,
+                  bool required)
+    {
+        if (!validate_full_flag(full_name))
+        {
+            std::cerr << "Failed to register flag " << full_name << ", "
+                      << ": identity not allowed" << std::endl;
+            return false;
+        }
+        if (!validate_short_flag(short_name))
+        {
+            std::cerr << "Failed to register flag " << short_name << "("
+                      << full_name << ")"
+                      << ": identity not allowed" << std::endl;
+            return false;
+        }
+        flags_.emplace_back(ConcreteFlag<T>::make_flag(
+            flag, full_name, short_name, desc, default_val));
+        required_.emplace_back(required);
         parsed_.emplace_back(false);
+        if (default_val.has_value())
+        {
+            if (!flags_.back()->apply_default())
+            {
+                std::cerr << "Failed to register flag " << full_name << ": "
+                          << "default value \"" << default_val.value()
+                          << "\" not parsable" << std::endl;
+                return false;
+            }
+        }
+        return true;
     }
     using KVPair = std::tuple<std::string, std::string>;
     using KVPairs = std::vector<KVPair>;
     bool is_flag(const std::string &str)
     {
         return !str.empty() && str[0] == '-';
+    }
+    bool validate_full_flag(const std::string &name) const
+    {
+        return name.size() >= 3 && name[0] == '-' && name[1] == '-' &&
+               isalpha(name[3]);
+    }
+    bool validate_short_flag(const std::string &name) const
+    {
+        return name.empty() ||
+               (name.size() >= 2 && name[0] == '-' && isalpha(name[1]));
     }
     KVPairs retrieve(int argc, char *argv[])
     {
