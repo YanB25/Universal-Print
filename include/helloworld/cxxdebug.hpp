@@ -90,6 +90,26 @@ private:
     if (++LOG_OCCURRENCES_N <= n)        \
     LOG(severity)
 
+#define CHECK_EQ(lhs, rhs) DO_CHECK(lhs, ==, rhs)
+#define CHECK_NE(lhs, rhs) DO_CHECK(lhs, !=, rhs)
+#define CHECK_GE(lhs, rhs) DO_CHECK(lhs, >=, rhs)
+#define CHECK_LE(lhs, rhs) DO_CHECK(lhs, <=, rhs)
+#define CHECK_GT(lhs, rhs) DO_CHECK(lhs, >, rhs)
+#define CHECK_LT(lhs, rhs) DO_CHECK(lhs, <, rhs)
+
+#define CHECK_VARNAME(base, line) CHECK_VARNAME_CONCAT(base, line)
+#define CHECK_VARNAME_CONCAT(base, line) base##line
+
+#define LHS_VAR CHECK_VARNAME(check_var_lhs_, __LINE__)
+#define RHS_VAR CHECK_VARNAME(check_var_rhs_, __LINE__)
+
+#define DO_CHECK(lhs, op, rhs)                                               \
+    decltype(lhs) LHS_VAR = (lhs);                                           \
+    decltype(rhs) RHS_VAR = (rhs);                                           \
+    if (!(LHS_VAR op RHS_VAR))                                               \
+    LOG(FATAL) << "Check Failed for cond: Expect: " << #lhs " " #op " " #rhs \
+               << ", Actual: " << LHS_VAR << " vs " << RHS_VAR << ". "
+
 #ifdef NDEBUG
 // release
 #define DLOG(severity) \

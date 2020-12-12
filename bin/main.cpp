@@ -48,5 +48,23 @@ int main()
     int* pn = nullptr;
     DLOG(INFO) << "It's " << *pn;
     DLOG(INFO) << "It's " << dead_loop();
+
+    CHECK_EQ(1, 2) << "It must be false";
+    CHECK_EQ(1, 1) << "????";
+
+    CHECK_NE(4, 4);
+    CHECK_NE(4, 5) << "??????";
+
+    CHECK_GT(4, 5);
+    CHECK_GT(5, 4) << "???";
+
+    CHECK_LT(5, 2);
+    CHECK_LT(2, 5) << "???";
+
+    CHECK_GE(2, 3);
+    CHECK_GE(3, 3) << "???";
+
+    CHECK_LE(3, 2);
+    CHECK_LE(3, 3) << "???";
     return 0;
 }
