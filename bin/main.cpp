@@ -72,5 +72,8 @@ int main()
 
     DCHECK(false);
     DLOG(ERROR) << "In Release, you should not see me";
+
+    std::string my_name = "yanbin";
+    SHOW(my_name);
     return 0;
 }

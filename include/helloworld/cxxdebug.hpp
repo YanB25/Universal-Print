@@ -114,6 +114,8 @@ private:
     LOG(FATAL) << "Check Failed for cond: Expect: " << #lhs " " #op " " #rhs \
                << ", Actual: " << LHS_VAR << " vs " << RHS_VAR << ". "
 
+#define SHOW(x) LOG(INFO) << "\"" #x "\": " << x
+
 #ifdef NDEBUG
 // release
 
