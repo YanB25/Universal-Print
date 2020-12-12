@@ -10,6 +10,15 @@ constexpr bool is_debug = true;
 constexpr bool is_debug = false;
 #endif
 
+#define RED "\x1B[31m"
+#define GRN "\x1B[32m"
+#define YEL "\x1B[33m"
+#define BLU "\x1B[34m"
+#define MAG "\x1B[35m"
+#define CYN "\x1B[36m"
+#define WHT "\x1B[37m"
+#define RESET "\x1B[0m"
+
 // This class is used to explicitly ignore values in the conditional
 // logging macros.  This avoids compiler warnings like "value computed
 // is not used" and "statement has no effect".
@@ -29,6 +38,8 @@ public:
 static constexpr int INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3;
 static constexpr const char *severity_level[] = {
     "INFO", "WARNING", "ERROR", "PANIC"};
+static constexpr const char *color[] = {GRN, YEL, RED, RED};
+static constexpr const char *color_reset = RESET;
 
 class Stream
 {
@@ -39,8 +50,8 @@ public:
     }
     std::ostream &stream()
     {
-        return std::cerr << "[" << severity_level[severity_] << "] " << file_
-                         << ":" << line_ << " ";
+        return std::cerr << color[severity_] << "[" << severity_level[severity_]
+                         << "] " << color_reset << file_ << ":" << line_ << " ";
     }
     ~Stream()
     {
