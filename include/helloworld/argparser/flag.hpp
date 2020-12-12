@@ -1,10 +1,10 @@
 #ifndef ARG_PARSER_FLAG_H
 #define ARG_PARSER_FLAG_H
 
+#include <iostream>
+#include <istream>
 #include <string>
 
-namespace hello
-{
 namespace argparser
 {
 namespace flag
@@ -61,14 +61,16 @@ public:
     {
         return "{Flag " + full_name_ + ", " + short_name_ + "}";
     }
-    // TODO: must handle --name="abc def"
-    // TODO: can I handle array?
-    bool apply(const std::string &value) override;
+    bool apply(const std::string &value) override
+    {
+        return apply_to(flag_, value);
+    }
+    static bool apply_to(T *target, const std::string &value);
     bool apply_default() override
     {
         if (default_.has_value())
         {
-            return apply(default_.value());
+            return apply_to(flag_, default_.value());
         }
         return false;
     }
@@ -93,31 +95,69 @@ private:
     std::string desc_;
     std::optional<std::string> default_;
 };
+
 template <typename T>
-bool ConcreteFlag<T>::apply(const std::string &value)
+std::istream &operator>>(std::istream &is, std::vector<T> &vec)
 {
-    std::istringstream iss(value);
-    iss >> *flag_;
-    return !iss.fail();
+    std::string token;
+    vec.clear();
+    while (!is.eof())
+    {
+        std::getline(is, token, ',');
+        T tmp;
+        bool succ = ConcreteFlag<T>::apply_to(&tmp, token);
+        if (!succ)
+        {
+            // manually set fail bit
+            is.setstate(std::ios_base::failbit);
+            return is;
+        }
+        vec.emplace_back(std::move(tmp));
+    }
+    return is;
 }
-template <>
-bool ConcreteFlag<bool>::apply(const std::string &value)
+
+template <typename T>
+bool ConcreteFlag<T>::apply_to(T *target, const std::string &value)
 {
+    if (value.find(' ') != std::string::npos)
+    {
+        return false;
+    }
+    std::istringstream iss(value);
+    iss >> *target;
+    return iss.eof() && !iss.fail();
+}
+
+template <>
+bool ConcreteFlag<bool>::apply_to(bool *target, const std::string &value)
+{
+    if (value.find(' ') != std::string::npos)
+    {
+        return false;
+    }
+
     if (value.empty() || value == "1" || value == "true")
     {
-        *flag_ = true;
+        *target = true;
         return true;
     }
     else if (value == "0" || value == "false")
     {
-        *flag_ = false;
+        *target = false;
         return true;
     }
     return false;
 }
+template <>
+bool ConcreteFlag<std::string>::apply_to(std::string *target,
+                                         const std::string &value)
+{
+    *target = value;
+    return true;
+}
 
 }  // namespace flag
 }  // namespace argparser
-}  // namespace hello
 
 #endif

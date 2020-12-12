@@ -11,25 +11,23 @@
 #include <vector>
 
 #include "./common.hpp"
+#include "./debug.hpp"
 #include "./flag-manager.hpp"
-namespace hello
-{
 namespace argparser
 {
+// TODO: unable to know the current command
 class Parser
 {
 public:
     using Pointer = std::unique_ptr<Parser>;
     using FlagPair = std::pair<std::string, std::string>;
     using FlagPairs = std::list<FlagPair>;
-    Parser(const std::string &description)
+    Parser(std::shared_ptr<flag::FlagManager> global_flag_manager,
+           const std::string &description)
         : description_(description),
-          flag_manager_(flag::FlagManager::new_instance())
+          flag_manager_(flag::FlagManager::new_instance()),
+          gf_manager_(global_flag_manager)
     {
-    }
-    static Pointer new_instance(const std::string &desc = {})
-    {
-        return std::make_unique<Parser>(desc);
     }
     void print_promt() const
     {
@@ -43,6 +41,7 @@ public:
         print_usage();
         print_command();
         flag_manager_->print_flags();
+        gf_manager_->print_flags("Global Flag");
     }
     void print_promt(FlagPairs &pairs) const
     {
@@ -76,7 +75,7 @@ public:
         }
         print_promt();
     }
-    void print_promt(int argc, char *argv[]) const
+    void print_promt(int argc, const char *argv[]) const
     {
         auto pairs = retrieve(argc, argv);
         return print_promt(pairs);
@@ -87,10 +86,12 @@ public:
     }
     Parser &command(const std::string &command, const std::string &desc = {})
     {
-        sub_parsers_.emplace(command, new_instance(desc));
+        sub_parsers_.emplace(command,
+                             std::make_unique<Parser>(gf_manager_, desc));
         max_command_len_ = std::max(max_command_len_, command.size());
         return *sub_parsers_[command];
     }
+    // TODO: make default has type?
     template <typename T>
     bool flag(T *flag,
               const std::string &full_name,
@@ -98,6 +99,13 @@ public:
               const std::string &desc,
               const std::optional<std::string> &default_val)
     {
+        if (gf_manager_->contain(full_name) || gf_manager_->contain(short_name))
+        {
+            std::cerr << "Flag registered failed: flag \"" << full_name
+                      << "\", \"" << short_name
+                      << "\" conflict with global flag" << std::endl;
+            return false;
+        }
         return flag_manager_->add_flag(
             flag, full_name, short_name, desc, default_val, false);
     }
@@ -107,15 +115,62 @@ public:
               const std::string &short_name,
               const std::string &desc)
     {
+        if (gf_manager_->contain(full_name) || gf_manager_->contain(short_name))
+        {
+            std::cerr << "Flag registered failed: flag \"" << full_name
+                      << "\", \"" << short_name
+                      << "\" conflict with global flag" << std::endl;
+            return false;
+        }
         return flag_manager_->add_flag(
             flag, full_name, short_name, desc, std::nullopt, true);
     }
-    bool parse(int argc, char *argv[])
+    template <typename T>
+    bool global_flag(T *flag,
+                     const std::string &full_name,
+                     const std::string &short_name,
+                     const std::string &desc)
     {
+        if (flag_manager_->contain(full_name) ||
+            flag_manager_->contain(short_name))
+        {
+            std::cerr << "Flag registered failed: flag \"" << full_name
+                      << "\", \"" << short_name << "\" conflict detected."
+                      << std::endl;
+            return false;
+        }
+        return gf_manager_->add_flag(
+            flag, full_name, short_name, desc, std::nullopt, true);
+    }
+    template <typename T>
+    bool global_flag(T *flag,
+                     const std::string &full_name,
+                     const std::string &short_name,
+                     const std::string &desc,
+                     const std::optional<std::string> &default_val)
+    {
+        if (flag_manager_->contain(full_name) ||
+            flag_manager_->contain(short_name))
+        {
+            std::cerr << "Flag registered failed: flag \"" << full_name
+                      << "\", \"" << short_name << "\" conflict detected."
+                      << std::endl;
+            return false;
+        }
+        return gf_manager_->add_flag(
+            flag, full_name, short_name, desc, default_val, false);
+    }
+    bool parse(int argc, const char *argv[])
+    {
+        command_path_.clear();
         program_name = argv[0];
 
         auto pairs = retrieve(argc, argv);
-        return do_parse(pairs);
+        return do_parse(pairs, command_path_);
+    }
+    std::vector<std::string> command_path() const
+    {
+        return command_path_;
     }
 
 private:
@@ -124,16 +179,29 @@ private:
     std::string description_;
 
     flag::FlagManager::Pointer flag_manager_;
+    flag::FlagManager::Pointer gf_manager_;
     std::unordered_map<std::string, Pointer> sub_parsers_;
     size_t max_command_len_{0};
 
+    std::vector<std::string> command_path_;
+
     void print_usage() const
     {
-        if (!flag_manager_->empty())
+        if (!flag_manager_->empty() || !sub_parsers_.empty())
         {
-            std::cout << "Usage:" << std::endl
-                      << "  " << program_name << " [flag]" << std::endl
+            std::cout << "Usage:" << std::endl;
+        }
+        if (!sub_parsers_.empty())
+        {
+            std::cout << std::string(8, ' ') << program_name << " [command]"
                       << std::endl;
+        }
+        if (!flag_manager_->empty())
+            std::cout << std::string(8, ' ') << program_name << " [flag]"
+                      << std::endl;
+        if (!flag_manager_->empty() || !sub_parsers_.empty())
+        {
+            std::cout << std::endl;
         }
     }
     const flag::FlagManager::Pointer flag_manager() const
@@ -154,7 +222,7 @@ private:
             std::cout << std::endl;
         }
     }
-    bool do_parse(FlagPairs &pairs)
+    bool do_parse(FlagPairs &pairs, std::vector<std::string>& command_path)
     {
         init_ = true;
 
@@ -175,7 +243,6 @@ private:
                 auto parser_it = sub_parsers_.find(key);
                 if (parser_it == sub_parsers_.end())
                 {
-                    // TODO: response to --help or -h.
                     std::cerr << "Failed to parse command \"" << key
                               << "\": use --help for usage." << std::endl;
                     return false;
@@ -184,11 +251,15 @@ private:
                 // remove [begin, pair_it] and pass the remaining to the
                 // sub_parser
                 pairs.erase(pairs.begin(), ++pair_it);
-                return sub_parser->do_parse(pairs);
+                command_path.push_back(key);
+                return sub_parser->do_parse(pairs, command_path);
             }
 
-            if (!flag_manager_->apply(key, value))
+            if (!flag_manager_->apply(key, value) &&
+                !gf_manager_->apply(key, value))
             {
+                std::cerr << "Failed to apply " << key << "=\"" << value
+                          << "\": Failure due to previous problem" << std::endl;
                 return false;
             }
         }
@@ -207,7 +278,7 @@ private:
         }
         return true;
     }
-    static FlagPairs retrieve(int argc, char *argv[])
+    static FlagPairs retrieve(int argc, const char *argv[])
     {
         FlagPairs ret;
         // skip program name, i start from 1
@@ -249,7 +320,7 @@ private:
                  * e.g. --flag_on
                  */
                 key = command_opt;
-                if (i + 1 >= argc || argv[i + 1][0] == '-')
+                if (i + 1 >= argc || flag::is_flag(argv[i + 1]))
                 {
                     // no value.
                 }
@@ -266,15 +337,30 @@ private:
         return ret;
     }
 };  // namespace argparser
-static Parser &init(const std::string &desc)
+std::shared_ptr<Parser> new_parser(const std::string &desc = {})
 {
-    static Parser::Pointer root_parser;
+    auto global_flag_manager = std::make_shared<flag::FlagManager>();
+    return std::make_shared<Parser>(global_flag_manager, desc);
+}
+
+Parser &init(const std::string &desc)
+{
+    static std::shared_ptr<Parser> root_parser;
     if (root_parser == nullptr)
     {
-        root_parser = Parser::new_instance(desc);
+        root_parser = new_parser(desc);
     }
     return *root_parser;
 }
+namespace impl
+{
+std::shared_ptr<Parser> new_parser(
+    std::shared_ptr<flag::FlagManager> global_flag_manager,
+    const std::string &desc = {})
+{
+    return std::make_shared<Parser>(global_flag_manager, desc);
+}
+
+}  // namespace impl
 }  // namespace argparser
-}  // namespace hello
 #endif

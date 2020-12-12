@@ -10,8 +10,6 @@
 #include "./common.hpp"
 #include "./flag.hpp"
 
-namespace hello
-{
 namespace argparser
 {
 namespace flag
@@ -32,13 +30,20 @@ public:
                   const std::optional<std::string> &default_val,
                   bool required)
     {
-        if (!is_full_flag(full_name))
+        if (!is_full_flag(full_name) && !is_short_flag(short_name))
+        {
+            std::cerr << "Failed to register flag " << full_name << ", "
+                      << short_name << ": Both flag formats are not allowed"
+                      << std::endl;
+            return false;
+        }
+        if (!full_name.empty() && !is_full_flag(full_name))
         {
             std::cerr << "Failed to register flag " << full_name
                       << ": identity not allowed" << std::endl;
             return false;
         }
-        if (!is_short_flag(short_name))
+        if (!short_name.empty() && !is_short_flag(short_name))
         {
             std::cerr << "Failed to register flag " << short_name << "("
                       << full_name << ")"
@@ -51,7 +56,7 @@ public:
                       << ": flag already registered" << std::endl;
             return false;
         }
-        if (!unique_short_flag(full_name))
+        if (!unique_short_flag(short_name))
         {
             std::cerr << "Failed to register flag " << short_name << "("
                       << full_name << ")"
@@ -60,8 +65,6 @@ public:
         }
         flags_.emplace_back(flag::ConcreteFlag<T>::make_flag(
             slot, full_name, short_name, desc, default_val));
-        required_.emplace_back(required);
-        applied_.emplace_back(false);
         if (default_val.has_value())
         {
             if (!flags_.back()->apply_default())
@@ -69,9 +72,14 @@ public:
                 std::cerr << "Failed to register flag " << full_name << ": "
                           << "default value \"" << default_val.value()
                           << "\" not parsable" << std::endl;
+                // pop the error one
+                flags_.pop_back();
                 return false;
             }
         }
+        required_.emplace_back(required);
+        applied_.emplace_back(false);
+
         max_full_name_len_ = std::max(max_full_name_len_, full_name.size());
         max_short_name_len_ = std::max(max_short_name_len_, short_name.size());
         /**
@@ -99,6 +107,15 @@ public:
             const auto &flag = flags_[i];
             if (flag->match(key))
             {
+                if (applied_[i])
+                {
+                    std::cerr << "Failed to apply " << key << "=\"" << value
+                              << "\": "
+                              << "Flag " << key
+                              << " already set and is provided more than once."
+                              << std::endl;
+                    return false;
+                }
                 if (!flag->apply(value))
                 {
                     std::cerr << "Failed to apply " << key << "=\"" << value
@@ -110,8 +127,6 @@ public:
                 return true;
             }
         }
-        std::cerr << "Failed to apply " << key << "=\"" << value << "\": "
-                  << "Flag not found" << std::endl;
         return false;
     }
     bool contain(const std::string name) const
@@ -148,13 +163,13 @@ public:
         return ret;
     }
     // TODO: make it formator
-    void print_flags() const
+    void print_flags(const std::string& title = "Flags") const
     {
         if (empty())
         {
             return;
         }
-        std::cout << "Flags:" << std::endl;
+        std::cout << title << ":" << std::endl;
         for (const auto &flag : flags_)
         {
             auto short_name = flag->short_name();
@@ -188,6 +203,7 @@ public:
             std::cout << desc;
             std::cout << std::endl;
         }
+        std::cout << std::endl;
     }
 
     FlagManager() = default;
@@ -199,13 +215,11 @@ private:
     {
         return registered_full_flags_.find(name) ==
                registered_full_flags_.end();
-        ;
     }
     bool unique_short_flag(const std::string &name) const
     {
         return registered_short_flags_.find(name) ==
                registered_short_flags_.end();
-        ;
     }
 
     std::set<std::string> registered_full_flags_;
@@ -218,7 +232,7 @@ private:
     size_t max_full_name_len_{0};
     size_t max_short_name_len_{0};
 };
+
 }  // namespace flag
 }  // namespace argparser
-}  // namespace hello
 #endif
