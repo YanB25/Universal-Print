@@ -117,34 +117,22 @@ private:
 #ifdef NDEBUG
 // release
 
-#define YBENCH_EAT 
+#define YBENCH_EAT \
     static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
 
-#define DLOG(severity) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DLOG_EVERY_N(severity, n) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DLOG_IF(severity, cond) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DLOG_IF_EVERY_N(severity, cond, n) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DLOG_FIRST_N(severity, n) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DLOG(severity) YBENCH_EAT
+#define DLOG_EVERY_N(severity, n) YBENCH_EAT
+#define DLOG_IF(severity, cond) YBENCH_EAT
+#define DLOG_IF_EVERY_N(severity, cond, n) YBENCH_EAT
+#define DLOG_FIRST_N(severity, n) YBENCH_EAT
 
-#define DCHECK_EQ(lhs, rhs) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DCHECK_NE(lhs, rhs) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DCHECK_GE(lhs, rhs) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DCHECK_LE(lhs, rhs) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DCHECK_GT(lhs, rhs) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DCHECK_LT(lhs, rhs) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
-#define DCHECK(cond) \
-    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK_EQ(lhs, rhs) YBENCH_EAT
+#define DCHECK_NE(lhs, rhs) YBENCH_EAT
+#define DCHECK_GE(lhs, rhs) YBENCH_EAT
+#define DCHECK_LE(lhs, rhs) YBENCH_EAT
+#define DCHECK_GT(lhs, rhs) YBENCH_EAT
+#define DCHECK_LT(lhs, rhs) YBENCH_EAT
+#define DCHECK(cond) YBENCH_EAT
 
 #else
 // debug

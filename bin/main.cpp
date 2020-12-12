@@ -71,5 +71,6 @@ int main()
     CHECK(false) << "So it fails";
 
     DCHECK(false);
+    DLOG(ERROR) << "In Release, you should not see me";
     return 0;
 }
