@@ -66,5 +66,10 @@ int main()
 
     CHECK_LE(3, 2);
     CHECK_LE(3, 3) << "???";
+
+    CHECK(true) << "???";
+    CHECK(false) << "So it fails";
+
+    DCHECK(false);
     return 0;
 }

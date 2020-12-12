@@ -96,6 +96,10 @@ private:
 #define CHECK_LE(lhs, rhs) DO_CHECK(lhs, <=, rhs)
 #define CHECK_GT(lhs, rhs) DO_CHECK(lhs, >, rhs)
 #define CHECK_LT(lhs, rhs) DO_CHECK(lhs, <, rhs)
+#define CHECK(cond)                                      \
+    if (!cond)                                           \
+    LOG(FATAL) << "Check Failed for cond: Expect: true " \
+               << ", Actual: " << #cond << " is false. "
 
 #define CHECK_VARNAME(base, line) CHECK_VARNAME_CONCAT(base, line)
 #define CHECK_VARNAME_CONCAT(base, line) base##line
@@ -112,6 +116,10 @@ private:
 
 #ifdef NDEBUG
 // release
+
+#define YBENCH_EAT 
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+
 #define DLOG(severity) \
     static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
 #define DLOG_EVERY_N(severity, n) \
@@ -123,6 +131,21 @@ private:
 #define DLOG_FIRST_N(severity, n) \
     static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
 
+#define DCHECK_EQ(lhs, rhs) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK_NE(lhs, rhs) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK_GE(lhs, rhs) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK_LE(lhs, rhs) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK_GT(lhs, rhs) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK_LT(lhs, rhs) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+#define DCHECK(cond) \
+    static_cast<void>(0), true ? (void) 0 : LogMessageVoidify() & std::cerr
+
 #else
 // debug
 #define DLOG(severity) LOG(severity)
@@ -130,6 +153,14 @@ private:
 #define DLOG_IF(severity, cond) LOG_IF(severity, cond)
 #define DLOG_IF_EVERY_N(severity, cond, n) LOG_IF_EVERY_N(severity, cond, n)
 #define DLOG_FIRST_N(severity, n) LOG_FIRST_N(severity, n)
+
+#define DCHECK_EQ(lhs, rhs) CHECK_EQ(lhs, rhs)
+#define DCHECK_NE(lhs, rhs) CHECK_NE(lhs, rhs)
+#define DCHECK_GE(lhs, rhs) CHECK_GE(lhs, rhs)
+#define DCHECK_LE(lhs, rhs) CHECK_LE(lhs, rhs)
+#define DCHECK_GT(lhs, rhs) CHECK_GT(lhs, rhs)
+#define DCHECK_LT(lhs, rhs) CHECK_LT(lhs, rhs)
+#define DCHECK(cond) CHECK(cond)
 
 #endif
 
