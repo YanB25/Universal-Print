@@ -78,7 +78,7 @@ private:
 
 #define LOG(severity) Stream(severity, __FILE__, __LINE__).stream()
 #define LOG_IF(severity, cond) \
-    (!cond) ? void(0) : LogMessageVoidify() & LOG(severity)
+    (!(cond)) ? void(0) : LogMessageVoidify() & LOG(severity)
 
 #define LOG_OCCURRENCES LOG_EVERY_N_VARNAME(occurrences_, __LINE__)
 #define LOG_OCCURRENCES_MOD_N LOG_EVERY_N_VARNAME(occurrences_mod_n_, __LINE__)
@@ -92,7 +92,7 @@ private:
 
 #define LOG_IF_EVERY_N(severity, cond, n)                                     \
     static size_t LOG_OCCURRENCES_MOD_N = 0;                                  \
-    if (cond && ((LOG_OCCURRENCES_MOD_N = (LOG_OCCURRENCES_MOD_N + 1) % n) == \
+    if ((cond) && ((LOG_OCCURRENCES_MOD_N = (LOG_OCCURRENCES_MOD_N + 1) % n) == \
                  (1 % n)))                                                    \
     LOG(severity)
 
@@ -108,7 +108,7 @@ private:
 #define CHECK_GT(lhs, rhs) DO_CHECK(lhs, >, rhs)
 #define CHECK_LT(lhs, rhs) DO_CHECK(lhs, <, rhs)
 #define CHECK(cond)                                      \
-    if (!cond)                                           \
+    if (!(cond))                                         \
     LOG(FATAL) << "Check Failed for cond: Expect: true " \
                << ", Actual: " << #cond << " is false. "
 
