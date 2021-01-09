@@ -48,7 +48,9 @@ if (${BUILD_STATIC_LIBS})
 
     # install instructions
     set_target_properties(helloworld-static PROPERTIES PUBLIC_HEADER "${HELLOWORLD_PUBLIC_HEADER}")
-    install(TARGETS helloworld-static PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/helloworld)
+    install(TARGETS helloworld-static PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/helloworld
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
 endif()
 
 if (${BUILD_SHARED_LIBS})
@@ -56,5 +58,6 @@ if (${BUILD_SHARED_LIBS})
 
     # install instructions
     set_target_properties(helloworld-dynamic PROPERTIES PUBLIC_HEADER "${HELLOWORLD_PUBLIC_HEADER}")
-    install(TARGETS helloworld-dynamic PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/helloworld)
+    install(TARGETS helloworld-dynamic PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_PREFIX}/include/helloworld
+        LIBRARY DESTINATION lib)
 endif()
