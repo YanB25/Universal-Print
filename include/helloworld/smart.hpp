@@ -53,9 +53,39 @@ inline std::string toNum(double ops)
         return std::to_string(ops / define::T) + " T";
     }
 }
+
+inline std::string toNum_i(double ops)
+{
+    if (ops < 1 * define::K)
+    {
+        return std::to_string(ops) + " ";
+    }
+    else if (ops < 1 * define::M)
+    {
+        return std::to_string(ops / define::Ki) + " Ki";
+    }
+    else if (ops < 1 * define::G)
+    {
+        return std::to_string(ops / define::Mi) + " Mi";
+    }
+    else if (ops < 1 * define::T)
+    {
+        return std::to_string(ops / define::Gi) + " Gi";
+    }
+    else
+    {
+        return std::to_string(ops / define::Ti) + " Ti";
+    }
+}
+
 inline std::string toOps(double ops)
 {
     return toNum(ops) + "ops";
+}
+
+inline std::string toBandwidth(double bd)
+{
+    return toNum_i(bd) + "Bps";
 }
 
 inline std::string nsToLatency(double ns)
