@@ -4,12 +4,6 @@
 #include <vector>
 #include <string>
 
-// TODO: make it portable.
-// #if !define __builtin_expect
-// #define __builtin_expect(x, expected_value) (x)
-// #pragma message("No __builtin_expect defined.")
-// #endif
-
 #if !defined(likely)
 #define likely(x) (__builtin_expect(!!(x), 1))
 #endif

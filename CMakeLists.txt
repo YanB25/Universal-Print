@@ -12,6 +12,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+find_package(glog REQUIRED)
+find_package(gflags REQUIRED)
+
 # dir to include
 set(HELLOWORLD_INCLUDE_DIRECTORIES include)
 
@@ -33,6 +38,9 @@ file(GLOB_RECURSE HELLOWORLD_PUBLIC_HEADER include/*)
 file(GLOB_RECURSE HELLOWORLD_SOURCE src/*)
 add_library(helloworld_obj OBJECT ${HELLOWORLD_SOURCE})
 target_include_directories(helloworld_obj PUBLIC ${HELLOWORLD_INCLUDE_DIRECTORIES})
+
+target_link_libraries(helloworld_obj PUBLIC ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES})
+target_include_directories(helloworld_obj PUBLIC ${GLOG_INCLUDE_DIRS} ${GFLAGS_INCLUDE_DIRS})
 
 if (${BUILD_UNITTEST})
     add_subdirectory(test)

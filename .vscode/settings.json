@@ -55,5 +55,6 @@
         "iomanip": "cpp",
         "cinttypes": "cpp",
         "variant": "cpp"
-    }
+    },
+    "editor.formatOnSave": true
 }
