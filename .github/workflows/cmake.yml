@@ -19,6 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
+        
     - name: Install Dependencies
       run: sudo apt install -y libgflags-dev libgoogle-glog-dev
 
