@@ -1,5 +1,7 @@
 # C++ Project Template
 
+![cmake workflow](https://github.com/YanB25/cpp-project-template/actions/workflows/cmake.yml/badge.svg)
+
 A C++ template to quickly start your own project.
 
 This template includes a simplest runnable helloworld program, which breaks down into a `helloworld` lib (see src/ and include/helloworld/) and an executable (see bin/main.cpp).
