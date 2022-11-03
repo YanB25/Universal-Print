@@ -1,15 +1,129 @@
-# C++ Project Template
+# Universal Presentation: A Header-only C++ Library to Cout STL containers and more
 
-![cmake workflow](https://github.com/YanB25/cpp-project-template/actions/workflows/cmake.yml/badge.svg)
+This library, UV (Universal Presentation), helps you to `std::cout` most C++ STL containers, in addition to the primitive types, as long as the underlying object `T` is cout-able.
 
-A C++ template to quickly start your own project.
+## Usage
 
-This template includes a simplest runnable helloworld program, which breaks down into a `helloworld` lib (see src/ and include/helloworld/) and an executable (see bin/main.cpp).
+UV can prints primitive types with customized control.
 
-## Bootstrap
+``` c++
+std::vector<int> vec{1, 2, 3, 4, 5};
+std::cout << util::pre(vec) << std::endl;
+// [1, 2, 3, 4, 5]
 
-``` bash
-$ ./bootstrap.sh
+std::cout << util::pre(vec, true /* verbose */, 2 /* limit */) << std::endl;
+// [1, ..., 4] (sz: 5, ommitted 3)
+
+std::cout << util::pre(vec, false, 0) << std::endl;
+// [...]
+```
+
+UV can also handle any customized types as long as it is *cout-able*.
+
+For example, `Person` is a *cout-able* object that overwrites `operator<<`.
+
+``` c++
+struct Person
+{
+    std::string name;
+    int age;
+};
+
+std::ostream &operator<<(std::ostream &os, const Person &p)
+{
+    os << "{Person " << p.name << " age: " << p.age << "}";
+    return os;
+};
+```
+
+In this case, UV handles the output of most STL containers well.
+
+For vector
+
+``` c++
+std::vector<Person> persons{
+    Person{.name = "A", .age = 25},
+    Person{.name = "B", .age = 30},
+    Person{.name = "C", .age = 45},
+};
+std::cout << util::pre(persons) << std::endl;
+// [{Person A age: 25}, {Person B age: 30}, {Person C age: 45}]
+std::cout << util::pre(persons, false, 1) << std::endl;
+// [{Person A age: 25}, ...]
+
+```
+
+For map
+
+``` c++
+std::map<std::string, Person> m;
+m["boss"] = Person{.name = "A", .age = 70};
+m["employee"] = Person{.name = "B", .age = 30};
+m["employee2"] = Person{.name = "C", .age = 30};
+m["employee4"] = Person{.name = "D", .age = 30};
+std::cout << "map: " << util::pre(m) << std::endl;
+// map: {("boss", {Person A age: 70}), ("employee", {Person B age: 30}), ("employee2", {Person C age: 30}), ("employee4", {Person D age: 30})}
+```
+
+For two-dimention vector
+
+``` c++
+std::vector<std::vector<Person>> matrix;
+matrix.push_back(
+    {Person{.name = "A", .age = 10}, Person{.name = "B", .age = 20}});
+matrix.push_back(
+    {Person{.name = "C", .age = 30}, Person{.name = "D", .age = 40}});
+std::cout << "matrix: " << util::pre(matrix) << std::endl;
+// [[{Person A age: 10}, {Person B age: 20}], [{Person C age: 30}, {Person D
+// age: 40}]]
+```
+
+## One More Thing
+
+UV gives more friendly outputs to C-style types and specific STL utilities.
+
+
+Pair and Tuple: 
+
+``` c++
+std::pair<int, int> pair{100, 200};
+std::cout << "pair: " << util::pre(pair) << std::endl;
+// pair: (100, 200)
+
+std::tuple<Person, int, int, int> t{
+    Person{.name = "tuple", .age = 4}, 2, 3, 4};
+std::cout << "tuple: " << util::pre(t) << std::endl;
+// tuple: <{Person tuple age: 4}, 2, 3, 4>
+```
+
+
+UV recognizes C-style array, but does not mess up with C-style string:
+
+``` c++
+int c_array[] = {2, 4, 6, 8, 10};
+std::cout << "c style array: " << util::pre(c_array) << std::endl;
+// c style array: [2, 4, 6, 8, 10]
+std::cout << "c style array: " << util::pre(c_array, false, 1) << std::endl;
+// c style array: [2, ...]
+std::cout << "c style array: " << util::pre(c_array, false, 2) << std::endl;
+// c style array: [2, ..., 8]
+std::cout << "c style array: " << util::pre(c_array, false, 0) << std::endl;
+// c style array: [...]
+
+```
+
+UV gives more friendly outputs to legacy C types.
+
+``` c++
+std::cout << "c style string: " << util::pre("hello world") << std::endl;
+// c style string: "hello world"
+std::cout << "c style ptr: " << util::pre((void *) 1024) << std::endl;
+// c style ptr: 0x400
+std::cout << "char: " << util::pre('a') << std::endl;
+// char: 'a'
+std::cout << "boolean: " << util::pre(true) << std::endl;
+// boolean: true
+
 ```
 
 ## Compile
@@ -26,33 +140,4 @@ make -j
 
 ``` bash
 $ ./bin/main
-hello world!
-```
-
-## Install & Uninstall
-
-``` bash
-# to install libs and headers
-sudo make install
-# to uninstall
-cat install_manifest.txt | sudo xargs rm -rf
-```
-
-## clang-format
-
-`clang-format` is an opt-in if you would like to use.
-
-``` bash
-sudo apt install clang-format
-```
-
-## Doxygen
-
-[doxygen](https://www.doxygen.nl/index.html) is supported if needed.
-
-To generate a document and open it
-
-``` bash
-doxygen Doxyfile
-open html/index.html
 ```

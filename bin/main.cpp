@@ -16,6 +16,12 @@ std::ostream &operator<<(std::ostream &os, const Person &p)
 
 int main()
 {
+    std::vector<int> vec{1, 2, 3, 4, 5};
+    std::cout << util::pre(vec) << std::endl;
+
+    std::cout << util::pre(vec, true, 2) << std::endl;
+    std::cout << util::pre(vec, false, 0) << std::endl;
+
     std::cout << util::pre(5) << std::endl;
     Person p{.name = "Alice", .age = 20};
     std::cout << util::pre(p) << std::endl;
