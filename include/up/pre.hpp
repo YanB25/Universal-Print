@@ -544,10 +544,13 @@ constexpr auto count(std::index_sequence<Is...>)
     return sz;
 }
 
+constexpr static size_t kMaxFieldNr = 32;
+
 template <typename T>
 constexpr auto count()
 {
-    return count<T>(std::make_index_sequence<sizeof(T)>{});
+    constexpr size_t count_nr = std::min(sizeof(T), kMaxFieldNr);
+    return count<T>(std::make_index_sequence<count_nr>{});
 }
 template <typename T>
 inline auto as_tuple(T &&, std::integral_constant<size_t, 0>)
@@ -559,6 +562,7 @@ inline auto as_tuple(T &&, std::integral_constant<size_t, 0>)
     template <typename T>                                          \
     inline auto as_tuple(T &&t, std::integral_constant<size_t, N>) \
     {                                                              \
+        static_assert(N <= kMaxFieldNr, "Tune up kMaxFieldNr");    \
         auto &[__VA_ARGS__] = t;                                   \
         return std::forward_as_tuple(__VA_ARGS__);                 \
     }
@@ -606,6 +610,10 @@ DEFINE_AS_TUPLE(29, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, 
                 x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28)
 DEFINE_AS_TUPLE(30, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
                 x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29)
+DEFINE_AS_TUPLE(31, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+    x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30)
+DEFINE_AS_TUPLE(32, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31)
 // clang-format on
 }  // namespace fallback
 
