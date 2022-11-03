@@ -1,12 +1,12 @@
 # Universal Presentation: A Header-only C++ Library to Print STL containers and more
 
-This library, UV (Universal Presentation), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as the underlying object `T` is *cout-able*.
+This library, UV (Universal Presentation), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as you make the underlying object `T` *cout-able*.
 
 ## Usage
 
 ### Primitive Types
 
-UV can prints primitive types with customized control.
+UV can prints containers of primitive types with customized control.
 
 ``` c++
 std::vector<int> vec{1, 2, 3, 4, 5};
@@ -22,9 +22,9 @@ std::cout << util::pre(vec, false, 0) << std::endl;
 
 ### Custom Types
 
-UV can also handle any custom types as long as it is *cout-able*.
+UV can also handle containers of custom types as long as you make it *cout-able*.
 
-For example, `Person` is a cout-able object that overwrites `operator<<`.
+For example, `Person` is a cout-able type that overwrites `operator<<` in the standard way.
 
 ``` c++
 struct Person
@@ -81,7 +81,7 @@ std::cout << "matrix: " << util::pre(matrix) << std::endl;
 
 ## One More Thing
 
-UV gives more friendly outputs to C-style types and specific STL utilities.
+UV gives more friendly outputs to specific STL utilities and C-style types.
 
 
 Pair and Tuple: 
@@ -97,6 +97,8 @@ std::cout << "tuple: " << util::pre(t) << std::endl;
 // tuple: <{Person tuple age: 4}, 2, 3, 4>
 ```
 
+UV handles `std::tuple<Types...>` well.
+
 
 UV recognizes C-style array, but does not mess up with C-style string:
 
@@ -104,15 +106,13 @@ UV recognizes C-style array, but does not mess up with C-style string:
 int c_array[] = {2, 4, 6, 8, 10};
 std::cout << "c style array: " << util::pre(c_array) << std::endl;
 // c style array: [2, 4, 6, 8, 10]
-std::cout << "c style array: " << util::pre(c_array, false, 1) << std::endl;
-// c style array: [2, ...]
 std::cout << "c style string: " << util::pre("hello world") << std::endl;
 // c style string: "hello world"
 // ** NOTE: will not show the ugly ['h', 'e', 'l', ...] version.
 
 ```
 
-UV gives more friendly outputs to legacy C types.
+UV gives more friendly outputs to legacy C types. E.e., explicite `"` and `'`.
 
 ``` c++
 std::cout << "c style string: " << util::pre("hello world") << std::endl;
@@ -122,6 +122,12 @@ std::cout << "char: " << util::pre('a') << std::endl;
 std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
 ```
+
+## Overhead
+
+UV guarantees $O(n)$ time and space overhead to any containers with $n$ elements.
+
+However, UV is optimized for human-readability instead of performance. Use it out of critical path for any performance-critical programs.
 
 ## Compile
 
