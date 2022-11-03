@@ -125,7 +125,7 @@ std::cout << "boolean: " << util::pre(true) << std::endl;
 
 ## Overhead
 
-UV guarantees $O(n)$ time and space overhead to any containers with $n$ elements.
+UV guarantees $O(n)$ overhead to any containers with $n$ elements. No copy is performed.
 
 However, UV is optimized for human-readability instead of performance. Use it out of critical path for any performance-critical programs.
 
