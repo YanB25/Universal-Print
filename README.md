@@ -1,6 +1,8 @@
-# Universal Print: A Header-only C++ Library to Print STL containers and more
+# Universal Print: A Header-only C++ Library to cout STL Containers and More
 
 This library, UP (Universal Print), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as you make the underlying object `T` *cout-able*.
+
+For those not overloading `operator<<`, UP generates default outputs with the best effort, which works well in most cases.
 
 ## Usage
 
@@ -20,11 +22,20 @@ std::cout << util::pre(vec, false, 0) << std::endl;
 // [...]
 ```
 
-### Custom Types
+UP works with adaptors, e.g., `std::queue`, `std::stack`, without data movement.
 
-UP can also handle containers of custom types as long as you make it *cout-able*.
+``` c++
+std::queue<int> queue; // assume it has [1, 2, 3, 4]
+std::cout << "queue:" << util::pre(queue) << std::endl
+// queue: [0, 1, 2, 3]
+// ** YES, UP works with adaptors.
+```
 
-For example, `Person` is a cout-able type that overwrites `operator<<` in the standard way.
+### Custom *Cout-able* Types
+
+UP can handle containers of custom types as long as you make it *cout-able*.
+
+For example, `Person` is a cout-able type that overloads `operator<<` in a standard way.
 
 ``` c++
 struct Person
@@ -40,9 +51,9 @@ std::ostream &operator<<(std::ostream &os, const Person &p)
 };
 ```
 
-In this case, UP handles the output of most STL containers well.
+In this case, UP handles the output of most STL containers for you automatically.
 
-For vector
+For vector (array, list, forward_list, etc)
 
 ``` c++
 std::vector<Person> persons{
@@ -55,7 +66,7 @@ std::cout << util::pre(persons) << std::endl;
 
 ```
 
-For map
+For map (unordered_map, set, unordered_set, etc)
 
 ``` c++
 std::map<std::string, Person> m;
@@ -67,7 +78,7 @@ std::cout << "map: " << util::pre(m) << std::endl;
 // map: {("boss", {Person A age: 70}), ("employee", {Person B age: 30}), ("employee2", {Person C age: 30}), ("employee4", {Person D age: 30})}
 ```
 
-For two-dimention vector
+For two-dimention vector (multi-dimentional array, C-style array, etc)
 
 ``` c++
 std::vector<std::vector<Person>> matrix;
@@ -79,65 +90,9 @@ std::cout << "matrix: " << util::pre(matrix) << std::endl;
 // [[{Person A age: 10}, {Person B age: 20}], [{Person C age: 30}, {Person D age: 40}]]
 ```
 
-### STL Utilities and C-style Types
+### Not *Cout-able* Types: Best Effort Output
 
-UP gives more friendly outputs to specific STL utilities and C-style types.
-
-
-Pair and Tuple: 
-
-``` c++
-std::pair<int, int> pair{100, 200};
-std::cout << "pair: " << util::pre(pair) << std::endl;
-// pair: (100, 200)
-
-std::tuple<Person, int, int, int> t{
-    Person{.name = "tuple", .age = 4}, 2, 3, 4};
-std::cout << "tuple: " << util::pre(t) << std::endl;
-// tuple: <{Person tuple age: 4}, 2, 3, 4>
-```
-
-UP handles `std::tuple<Types...>` well.
-
-
-UP recognizes C-style array, but does not mess up with C-style string:
-
-``` c++
-int c_array[] = {2, 4, 6, 8, 10};
-std::cout << "c style array: " << util::pre(c_array) << std::endl;
-// c style array: [2, 4, 6, 8, 10]
-std::cout << "c style string: " << util::pre("hello world") << std::endl;
-// c style string: "hello world"
-// ** NOTE: will not show the ugly ['h', 'e', 'l', ...] version.
-
-```
-
-UP gives more friendly outputs to legacy C types. E.e., explicite `"` and `'`.
-
-``` c++
-std::cout << "c style string: " << util::pre("hello world") << std::endl;
-// c style string: "hello world"
-std::cout << "char: " << util::pre('a') << std::endl;
-// char: 'a'
-std::cout << "boolean: " << util::pre(true) << std::endl;
-// boolean: true
-```
-
-### More
-
-UP further supports
-
-- std::optional, std:: atomic
-- std::shared_ptr, std::unique_ptr
-- The adaptors, e.g., std::stack, std::queue, std::priority_queue, ... Yes, we support them without any *copy*.
-
-UP provides `util::pre_str` to return a `std::string`.
-
-Feature requests are welcomed.
-
-### Un-Coutable Types: in a best effort way
-
-For the un-coutable types, UP can still work in a best-effort way.
+For the not cout-able types, UP provides a best-effort output.
 
 ``` c++
 struct Obj
@@ -158,18 +113,72 @@ std::cout << util::pre(obj) << std::endl;
 
 In this case, the field names of the class are wiped out, since C++ does not support [reflection](https://en.cppreference.com/w/cpp/keyword/reflexpr).
 
-Codes borrowed from [ezprint](https://github.com/Sinacam/ezprint). 
-
-This feature heavily relies on [structured binding (C++17)](https://en.cppreference.com/w/cpp/language/structured_binding). Therefore, it has compatibility issues with
+This feature heavily relies on [structured binding (C++17)](https://en.cppreference.com/w/cpp/language/structured_binding). Therefore, it does not recognize
 - C style array
 - std::optional
 - ... (maybe more)
 
+Explicitly overload `operator<<` in this case.
 
+Codes borrowed from [ezprint](https://github.com/Sinacam/ezprint). 
+
+### Other STL Wrappers and C-style Types
+
+UP gives more friendly outputs to other STL utilities/wrappers and C-style types.
+
+For pair and tuple:
+
+``` c++
+std::pair<int, int> pair{100, 200};
+std::cout << "pair: " << util::pre(pair) << std::endl;
+// pair: (100, 200)
+
+std::tuple<Person, int, int, int> t{
+    Person{.name = "tuple", .age = 4}, 2, 3, 4};
+std::cout << "tuple: " << util::pre(t) << std::endl;
+// tuple: <{Person tuple age: 4}, 2, 3, 4>
+```
+UP handles `std::tuple<Types...>` well.
+
+
+UP recognizes C-style array, but does not mess up with C-style string:
+
+``` c++
+int c_array[] = {2, 4, 6, 8, 10};
+std::cout << "c style array: " << util::pre(c_array) << std::endl;
+// c style array: [2, 4, 6, 8, 10]
+std::cout << "c style string: " << util::pre("hello world") << std::endl;
+// c style string: "hello world"
+// ** NOTE: will not show the ugly ['h', 'e', 'l', ...] version.
+
+```
+
+UP gives more friendly outputs to the primitive type.
+
+``` c++
+std::cout << "c style string: " << util::pre("hello world") << std::endl;
+// c style string: "hello world"
+std::cout << "char: " << util::pre('a') << std::endl;
+// char: 'a'
+std::cout << "boolean: " << util::pre(true) << std::endl;
+// boolean: true
+```
+
+### Applicability
+
+UP supports most, if not all, STL wrappers. Including
+
+- std::optional, std:: atomic
+- std::shared_ptr, std::unique_ptr
+- The adaptors, e.g., std::stack, std::queue, std::priority_queue, ... Yes, UP supports them without any *copy*.
+
+Feature requests are welcomed.
+
+For getting a `std::string`, UP provides a similar `util::pre_str`.
 
 ## Use UP Universally
 
-We recommend to use UP universally, i.e., use it under any situations.
+We recommend to use UP universally, i.e., use it under any interactions with `std::ostream`.
 Image you have nested classes, `A` and `B`.
 
 ``` c++

@@ -138,5 +138,14 @@ int main()
         // {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
     }
 
+    {
+        std::queue<int> q;
+        for (size_t i = 0; i < 4; ++i)
+        {
+            q.push(i);
+        }
+        std::cout << util::pre(q) << std::endl;
+    }
+
     return 0;
 }

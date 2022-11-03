@@ -79,7 +79,8 @@
         "locale": "cpp",
         "mutex": "cpp",
         "ratio": "cpp",
-        "__functional_base": "cpp"
+        "__functional_base": "cpp",
+        "queue": "cpp"
     },
     "editor.formatOnSave": true
 }
