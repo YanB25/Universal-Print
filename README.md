@@ -1,12 +1,12 @@
-# Universal Presentation: A Header-only C++ Library to Print STL containers and more
+# Universal Print: A Header-only C++ Library to Print STL containers and more
 
-This library, UV (Universal Presentation), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as you make the underlying object `T` *cout-able*.
+This library, UP (Universal Print), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as you make the underlying object `T` *cout-able*.
 
 ## Usage
 
 ### Primitive Types
 
-UV can prints containers of primitive types with customized control.
+UP can prints containers of primitive types with customized control.
 
 ``` c++
 std::vector<int> vec{1, 2, 3, 4, 5};
@@ -22,7 +22,7 @@ std::cout << util::pre(vec, false, 0) << std::endl;
 
 ### Custom Types
 
-UV can also handle containers of custom types as long as you make it *cout-able*.
+UP can also handle containers of custom types as long as you make it *cout-able*.
 
 For example, `Person` is a cout-able type that overwrites `operator<<` in the standard way.
 
@@ -40,7 +40,7 @@ std::ostream &operator<<(std::ostream &os, const Person &p)
 };
 ```
 
-In this case, UV handles the output of most STL containers well.
+In this case, UP handles the output of most STL containers well.
 
 For vector
 
@@ -81,7 +81,7 @@ std::cout << "matrix: " << util::pre(matrix) << std::endl;
 
 ### STL Utilities and C-style Types
 
-UV gives more friendly outputs to specific STL utilities and C-style types.
+UP gives more friendly outputs to specific STL utilities and C-style types.
 
 
 Pair and Tuple: 
@@ -97,10 +97,10 @@ std::cout << "tuple: " << util::pre(t) << std::endl;
 // tuple: <{Person tuple age: 4}, 2, 3, 4>
 ```
 
-UV handles `std::tuple<Types...>` well.
+UP handles `std::tuple<Types...>` well.
 
 
-UV recognizes C-style array, but does not mess up with C-style string:
+UP recognizes C-style array, but does not mess up with C-style string:
 
 ``` c++
 int c_array[] = {2, 4, 6, 8, 10};
@@ -112,7 +112,7 @@ std::cout << "c style string: " << util::pre("hello world") << std::endl;
 
 ```
 
-UV gives more friendly outputs to legacy C types. E.e., explicite `"` and `'`.
+UP gives more friendly outputs to legacy C types. E.e., explicite `"` and `'`.
 
 ``` c++
 std::cout << "c style string: " << util::pre("hello world") << std::endl;
@@ -123,19 +123,21 @@ std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
 ```
 
-## More
+### More
 
-UV further supports
+UP further supports
 
 - std::optional, std:: atomic
 - std::shared_ptr, std::unique_ptr
-- The adaptors, e.g., std::stack, std::queue, std::priority_queue, ...
+- The adaptors, e.g., std::stack, std::queue, std::priority_queue, ... Yes, we support them without any *copy*.
 
-UV provides `util::pre_str` to return a `std::string`.
+UP provides `util::pre_str` to return a `std::string`.
 
-## Use UV Universally
+Feature requests are welcomed.
 
-We recommend to use UV universally, i.e., use it under any situations.
+## Use UP Universally
+
+We recommend to use UP universally, i.e., use it under any situations.
 Image you have nested classes, `A` and `B`.
 
 ``` c++
@@ -152,7 +154,7 @@ struct B
 
 ```
 
-Use UV to help you show *any* members recursively.
+Use UP to help you show *any* members recursively.
 
 ``` c++
 std::ostream &operator<<(std::ostream &os, const A &obj)
@@ -172,9 +174,9 @@ std::ostream &operator<<(std::ostream &os, const B &obj)
 
 ## Overhead
 
-UV guarantees $O(n)$ overhead to any containers with $n$ elements. No copy is performed.
+UP guarantees $O(n)$ overhead to any containers with $n$ elements. No copy is performed.
 
-However, UV is optimized for human-readability instead of performance. Use it out of critical path for any performance-critical programs.
+However, UP is optimized for human-readability instead of performance. Use it out of critical path for any performance-critical programs.
 
 ## Compile
 
