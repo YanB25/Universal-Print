@@ -156,14 +156,14 @@ std::cout << util::pre(obj) << std::endl;
 // {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
 ```
 
-In this case, the field names of the class are wiped out, since C++ does not support *reflection*.
+In this case, the field names of the class are wiped out, since C++ does not support [reflection](https://en.cppreference.com/w/cpp/keyword/reflexpr).
 
 Codes borrowed from [ezprint](https://github.com/Sinacam/ezprint). 
 
-Known issues: `util::pre`ing an un-coutable types have compatibility issues with 
+This feature heavily relies on [structured binding (C++17)](https://en.cppreference.com/w/cpp/language/structured_binding). Therefore, it has compatibility issues with
 - C style array
 - std::optional
-- ...
+- ... (maybe more)
 
 
 
