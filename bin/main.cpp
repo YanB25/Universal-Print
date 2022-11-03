@@ -14,6 +14,27 @@ std::ostream &operator<<(std::ostream &os, const Person &p)
     return os;
 };
 
+struct A
+{
+    int a;
+};
+std::ostream &operator<<(std::ostream &os, const A &obj)
+{
+    os << "{A " << util::pre(obj.a) << "}";
+    return os;
+};
+
+struct B
+{
+    A a;
+    int b;
+};
+std::ostream &operator<<(std::ostream &os, const B &obj)
+{
+    os << "{B a: " << util::pre(obj.a) << ", b: " << util::pre(obj.b) << "}";
+    return os;
+};
+
 int main()
 {
     std::vector<int> vec{1, 2, 3, 4, 5};
@@ -97,6 +118,10 @@ int main()
     // char: 'a'
     std::cout << "boolean: " << util::pre(true) << std::endl;
     // boolean: true
+
+    A obj_a{.a = 5};
+    B obj_b{.a = obj_a, .b = 10};
+    std::cout << "B: " << obj_b << std::endl;
 
     return 0;
 }

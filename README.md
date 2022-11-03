@@ -123,6 +123,43 @@ std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
 ```
 
+## Use UV Universally
+
+We recommend to use UV universally, i.e., use it under any situations.
+Image you have nested classes, `A` and `B`.
+
+``` c++
+struct A
+{
+    int a;
+};
+
+struct B
+{
+    A a; // nested here
+    int b;
+};
+
+```
+
+Use UV to help you show *any* members recursively.
+
+``` c++
+std::ostream &operator<<(std::ostream &os, const A &obj)
+{
+    // use util::pre for int
+    os << "{A " << util::pre(obj.a) << "}";
+    return os;
+};
+
+std::ostream &operator<<(std::ostream &os, const B &obj)
+{
+    // use util::pre for A and int
+    os << "{B a: " << util::pre(obj.a) << ", b: " << util::pre(obj.b) << "}";
+    return os;
+};
+```
+
 ## Overhead
 
 UV guarantees $O(n)$ overhead to any containers with $n$ elements. No copy is performed.
