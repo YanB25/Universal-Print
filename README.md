@@ -1,8 +1,10 @@
-# Universal Presentation: A Header-only C++ Library to Cout STL containers and more
+# Universal Presentation: A Header-only C++ Library to Print STL containers and more
 
-This library, UV (Universal Presentation), helps you to `std::cout` most C++ STL containers, in addition to the primitive types, as long as the underlying object `T` is cout-able.
+This library, UV (Universal Presentation), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as the underlying object `T` is *cout-able*.
 
 ## Usage
+
+### Primitive Types
 
 UV can prints primitive types with customized control.
 
@@ -18,9 +20,11 @@ std::cout << util::pre(vec, false, 0) << std::endl;
 // [...]
 ```
 
-UV can also handle any customized types as long as it is *cout-able*.
+### Custom Types
 
-For example, `Person` is a *cout-able* object that overwrites `operator<<`.
+UV can also handle any custom types as long as it is *cout-able*.
+
+For example, `Person` is a cout-able object that overwrites `operator<<`.
 
 ``` c++
 struct Person
@@ -48,8 +52,6 @@ std::vector<Person> persons{
 };
 std::cout << util::pre(persons) << std::endl;
 // [{Person A age: 25}, {Person B age: 30}, {Person C age: 45}]
-std::cout << util::pre(persons, false, 1) << std::endl;
-// [{Person A age: 25}, ...]
 
 ```
 
@@ -74,8 +76,7 @@ matrix.push_back(
 matrix.push_back(
     {Person{.name = "C", .age = 30}, Person{.name = "D", .age = 40}});
 std::cout << "matrix: " << util::pre(matrix) << std::endl;
-// [[{Person A age: 10}, {Person B age: 20}], [{Person C age: 30}, {Person D
-// age: 40}]]
+// [[{Person A age: 10}, {Person B age: 20}], [{Person C age: 30}, {Person D age: 40}]]
 ```
 
 ## One More Thing
@@ -105,10 +106,9 @@ std::cout << "c style array: " << util::pre(c_array) << std::endl;
 // c style array: [2, 4, 6, 8, 10]
 std::cout << "c style array: " << util::pre(c_array, false, 1) << std::endl;
 // c style array: [2, ...]
-std::cout << "c style array: " << util::pre(c_array, false, 2) << std::endl;
-// c style array: [2, ..., 8]
-std::cout << "c style array: " << util::pre(c_array, false, 0) << std::endl;
-// c style array: [...]
+std::cout << "c style string: " << util::pre("hello world") << std::endl;
+// c style string: "hello world"
+// ** NOTE: will not show the ugly ['h', 'e', 'l', ...] version.
 
 ```
 
@@ -117,13 +117,10 @@ UV gives more friendly outputs to legacy C types.
 ``` c++
 std::cout << "c style string: " << util::pre("hello world") << std::endl;
 // c style string: "hello world"
-std::cout << "c style ptr: " << util::pre((void *) 1024) << std::endl;
-// c style ptr: 0x400
 std::cout << "char: " << util::pre('a') << std::endl;
 // char: 'a'
 std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
-
 ```
 
 ## Compile
