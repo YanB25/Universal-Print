@@ -79,7 +79,7 @@ std::cout << "matrix: " << util::pre(matrix) << std::endl;
 // [[{Person A age: 10}, {Person B age: 20}], [{Person C age: 30}, {Person D age: 40}]]
 ```
 
-## One More Thing
+### STL Utilities and C-style Types
 
 UV gives more friendly outputs to specific STL utilities and C-style types.
 
@@ -122,6 +122,16 @@ std::cout << "char: " << util::pre('a') << std::endl;
 std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
 ```
+
+## More
+
+UV further supports
+
+- std::optional, std:: atomic
+- std::shared_ptr, std::unique_ptr
+- The adaptors, e.g., std::stack, std::queue, std::priority_queue, ...
+
+UV provides `util::pre_str` to return a `std::string`.
 
 ## Use UV Universally
 

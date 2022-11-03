@@ -1,12 +1,18 @@
 #pragma once
 #ifndef UNIVERSAL_PRESENTATION_H_
 #define UNIVERSAL_PRESENTATION_H_
+
 #include <array>
+#include <atomic>
+#include <deque>
 #include <forward_list>
 #include <iostream>
 #include <list>
 #include <map>
+#include <optional>
+#include <queue>
 #include <set>
+#include <stack>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -357,6 +363,14 @@ inline std::ostream &operator<<(std::ostream &os,
     return os;
 }
 
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre<std::deque<T>> &p)
+{
+    os << util::pre(
+        std_container_present_impl(p.inner()), p.verbose(), p.limit());
+    return os;
+}
+
 template <typename T,
           size_t size,
           std::enable_if_t<!std::is_same_v<T, char>, bool> = true>
@@ -395,6 +409,27 @@ inline std::ostream &operator<<(std::ostream &os, const pre<char> &p)
     return os;
 }
 
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre<std::optional<T>> &t)
+{
+    if (t.inner().has_value())
+    {
+        os << "some(" << util::pre(t.inner().value()) << ")";
+    }
+    else
+    {
+        os << "nullopt";
+    }
+    return os;
+}
+
+inline std::ostream &operator<<(std::ostream &os, const pre<std::nullopt_t> &)
+{
+    os << "nullopt";
+    return os;
+}
+
 inline std::ostream &operator<<(std::ostream &os, const pre<bool> &p)
 {
     if (p.inner())
@@ -408,6 +443,14 @@ inline std::ostream &operator<<(std::ostream &os, const pre<bool> &p)
     return os;
 }
 
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre<std::atomic<T>> &t)
+{
+    os << "atomic(" << util::pre(t.inner().load(std::memory_order_relaxed))
+       << ")";
+    return os;
+}
+
 template <typename T, typename U>
 inline std::ostream &operator<<(std::ostream &os, const pre<std::pair<T, U>> &s)
 {
@@ -416,6 +459,56 @@ inline std::ostream &operator<<(std::ostream &os, const pre<std::pair<T, U>> &s)
     return os;
 }
 
+// a hack to get the internal container of any adaptors
+// https://stackoverflow.com/questions/1185252/is-there-a-way-to-access-the-underlying-container-of-stl-container-adaptors
+template <class ADAPTER>
+const typename ADAPTER::container_type &get_container(const ADAPTER &a)
+{
+    struct hack : ADAPTER
+    {
+        static const typename ADAPTER::container_type &get(const ADAPTER &a)
+        {
+            return a.*(&hack::c);
+        }
+    };
+    return hack::get(a);
+}
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre<std::queue<T>> &s)
+{
+    const auto &t = s.inner();
+    const auto &c = get_container(t);
+    os << util::pre(c);
+    return os;
+}
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre<std::stack<T>> &s)
+{
+    const auto &t = s.inner();
+    const auto &c = get_container(t);
+    os << util::pre(c);
+    return os;
+}
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre<std::priority_queue<T>> &s)
+{
+    const auto &t = s.inner();
+    const auto &c = get_container(t);
+    os << util::pre(c);
+    return os;
+}
+
+template <typename T>
+std::string pre_str(const T &t)
+{
+    std::stringstream ss;
+    ss << util::pre(t);
+    return ss.str();
+}
 }  // namespace util
 
 #endif
