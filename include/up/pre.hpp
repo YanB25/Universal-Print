@@ -196,7 +196,7 @@ inline std::ostream &operator<<(std::ostream &os,
                                 std_tuple_present_impl<TupType, I...> &t)
 {
     os << "<";
-    (..., (os << (I == 0 ? "" : ", ") << std::get<I>(t.t_)));
+    (..., (os << (I == 0 ? "" : ", ") << util::pre(std::get<I>(t.t_))));
     os << ">";
     return os;
 }
@@ -510,6 +510,115 @@ std::string pre_str(const T &t)
     ss << util::pre(t);
     return ss.str();
 }
+
+// https://github.com/Sinacam/ezprint
+// https://stackoverflow.com/questions/64777768/easy-way-to-cout-any-struct-in-c
+namespace fallback
+{
+struct ubiq
+{
+    template <typename T>
+    operator T();
+};
+
+template <size_t>
+using ubiq_t = ubiq;
+
+template <typename T, typename... Ubiqs>
+constexpr auto count_r(size_t &sz, int) -> std::void_t<decltype(T{Ubiqs{}...})>
+{
+    sz = sizeof...(Ubiqs);
+}
+
+template <typename T, typename, typename... Ubiqs>
+constexpr auto count_r(size_t &sz, float)
+{
+    count_r<T, Ubiqs...>(sz, 0);
+}
+
+template <typename T, size_t... Is>
+constexpr auto count(std::index_sequence<Is...>)
+{
+    size_t sz = 0;
+    count_r<T, ubiq_t<Is>...>(sz, 0);
+    return sz;
+}
+
+template <typename T>
+constexpr auto count()
+{
+    return count<T>(std::make_index_sequence<sizeof(T)>{});
+}
+template <typename T>
+inline auto as_tuple(T &&, std::integral_constant<size_t, 0>)
+{
+    return std::tuple{};
+}
+
+#define DEFINE_AS_TUPLE(N, ...)                                    \
+    template <typename T>                                          \
+    inline auto as_tuple(T &&t, std::integral_constant<size_t, N>) \
+    {                                                              \
+        auto &[__VA_ARGS__] = t;                                   \
+        return std::forward_as_tuple(__VA_ARGS__);                 \
+    }
+// clang-format off
+DEFINE_AS_TUPLE(1, x0)
+DEFINE_AS_TUPLE(2, x0, x1)
+DEFINE_AS_TUPLE(3, x0, x1, x2)
+DEFINE_AS_TUPLE(4, x0, x1, x2, x3)
+DEFINE_AS_TUPLE(5, x0, x1, x2, x3, x4)
+DEFINE_AS_TUPLE(6, x0, x1, x2, x3, x4, x5)
+DEFINE_AS_TUPLE(7, x0, x1, x2, x3, x4, x5, x6)
+DEFINE_AS_TUPLE(8, x0, x1, x2, x3, x4, x5, x6, x7)
+DEFINE_AS_TUPLE(9, x0, x1, x2, x3, x4, x5, x6, x7, x8)
+DEFINE_AS_TUPLE(10, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)
+DEFINE_AS_TUPLE(11, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
+DEFINE_AS_TUPLE(12, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)
+DEFINE_AS_TUPLE(13, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12)
+DEFINE_AS_TUPLE(14, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13)
+DEFINE_AS_TUPLE(15, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14)
+DEFINE_AS_TUPLE(16, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15)
+DEFINE_AS_TUPLE(17, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16)
+DEFINE_AS_TUPLE(18, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17)
+DEFINE_AS_TUPLE(19, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18)
+DEFINE_AS_TUPLE(20, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19)
+DEFINE_AS_TUPLE(21, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20)
+DEFINE_AS_TUPLE(22, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21)
+DEFINE_AS_TUPLE(23, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22)
+DEFINE_AS_TUPLE(24, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23)
+DEFINE_AS_TUPLE(25, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24)
+DEFINE_AS_TUPLE(26, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24, x25)
+DEFINE_AS_TUPLE(27, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24, x25, x26)
+DEFINE_AS_TUPLE(28, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27)
+DEFINE_AS_TUPLE(29, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28)
+DEFINE_AS_TUPLE(30, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16,
+                x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29)
+// clang-format on
+}  // namespace fallback
+
+template <typename T, std::enable_if_t<!ostreamable_v<T>, bool> = true>
+inline std::ostream &operator<<(std::ostream &os, const pre<T> &t)
+{
+    auto tup = util::fallback::as_tuple(
+        t.inner(),
+        std::integral_constant<size_t, util::fallback::count<T>()>{});
+    os << "{Unknown " << util::pre(tup) << "}";
+    return os;
+}
+
 }  // namespace util
 
 #endif

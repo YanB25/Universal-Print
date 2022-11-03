@@ -123,5 +123,20 @@ int main()
     B obj_b{.a = obj_a, .b = 10};
     std::cout << "B: " << obj_b << std::endl;
 
+    {
+        struct S
+        {
+            int x;
+            std::string s;
+            std::vector<int> v;
+            std::map<int, int> m;
+            std::atomic<int> a;
+            bool b;
+        };
+        S s = {42, "42", {1, 2, 3}, {{5, 2}, {7, 11}}, 10, false};
+        std::cout << util::pre(s) << std::endl;
+        // {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
+    }
+
     return 0;
 }

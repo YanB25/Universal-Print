@@ -135,6 +135,38 @@ UP provides `util::pre_str` to return a `std::string`.
 
 Feature requests are welcomed.
 
+### Un-Coutable Types: in a best effort way
+
+For the un-coutable types, UP can still work in a best-effort way.
+
+``` c++
+struct Obj
+{
+    int x;
+    std::string s;
+    std::vector<int> v;
+    std::map<int, int> m;
+    std::atomic<int> a;
+    bool b;
+};
+// ** No operator<< overloaded.
+
+Obj obj = {42, "42", {1, 2, 3}, {{5, 2}, {7, 11}}, 10, false};
+std::cout << util::pre(obj) << std::endl;
+// {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
+```
+
+In this case, the field names of the class are wiped out, since C++ does not support *reflection*.
+
+Codes borrowed from [ezprint](https://github.com/Sinacam/ezprint). 
+
+Known issues: `util::pre`ing an un-coutable types have compatibility issues with 
+- C style array
+- std::optional
+- ...
+
+
+
 ## Use UP Universally
 
 We recommend to use UP universally, i.e., use it under any situations.
