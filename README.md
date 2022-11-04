@@ -15,10 +15,10 @@ std::vector<int> vec{1, 2, 3, 4, 5};
 std::cout << util::pre(vec) << std::endl;
 // [1, 2, 3, 4, 5]
 
-std::cout << util::pre(vec, true /* verbose */, 2 /* limit */) << std::endl;
+std::cout << util::pre(vec, 2 /* limit */) << std::endl;
 // [1, ..., 4] (sz: 5, ommitted 3)
 
-std::cout << util::pre(vec, false, 0) << std::endl;
+std::cout << util::pre(vec, 0 /* limit */) << std::endl;
 // [...]
 ```
 
@@ -66,7 +66,7 @@ std::cout << util::pre(persons) << std::endl;
 
 ```
 
-For map (unordered_map, set, unordered_set, etc)
+For map (unordered_map, unordered_multimap, set, unordered_set, unordered_multiset, etc)
 
 ``` c++
 std::map<std::string, Person> m;

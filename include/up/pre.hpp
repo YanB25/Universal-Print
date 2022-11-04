@@ -18,6 +18,29 @@
 #include <unordered_set>
 #include <vector>
 
+// Implementation Details
+// We maintain use two type:
+// - util::pre
+// - util::pre_impl
+// * util::pre is the black-box interface
+// Any cout of pre<T> will be trapped into cout of pre_impl<T>, with ctx.depth
+// minused by one automatically.
+// If pre_impl<T> is not cout-able, it fallback to cout T
+// T, itself, must be cout-able. Otherwise, COMPILE ERROR
+
+// Reasoning:
+// The trap from util::pre<T> to util::impl_pre<T>
+// give a chance of automatically minus ctx.depth by one.
+
+// For any T that steps in one level logically
+// e.g., std::vector<T>, std::deque<T>
+// let util::pre_impl<T> be cout-able, so that ctx.depth is updated
+
+// For any helper type T, i.e., those behave transparently
+// e.g., std::queue<T> is helper of std::deque<T>
+// e.g., std_container_present_impl is a helper of T
+// let util::pre<T> be cout-able, so that ctx.depth is not touched
+
 template <typename T, typename = void>
 auto constexpr ostreamable_v = false;
 template <typename T>
@@ -27,46 +50,131 @@ auto constexpr ostreamable_v<
 
 namespace util
 {
-// Universal presentation:
-// If an object of type T is ostream-able
-// Then, pre<T> is also ostream-able
+struct pre_ctx
+{
+    pre_ctx(ssize_t l, ssize_t d, bool h) : limit(l), depth(d), human(h)
+    {
+    }
+    pre_ctx() = default;
+    ssize_t limit{std::numeric_limits<decltype(limit)>::max()};
+    ssize_t depth{std::numeric_limits<decltype(depth)>::max()};
+    bool human{false};
+};
+
 template <typename T>
-class pre
+class pre_impl
 {
 public:
-    pre(const T &t,
-        bool verbose = false,
-        size_t limit = std::numeric_limits<size_t>::max())
-        : t_(t), v_(verbose), limit_(limit)
+    static constexpr ssize_t kMax =
+        std::numeric_limits<decltype(pre_ctx::limit)>::max();
+    pre_impl(const T &t,
+             ssize_t limit = kMax,
+             ssize_t depth = kMax,
+             bool human = false)
+        : t_(t), ctx_(pre_ctx{limit, depth, human})
     {
     }
-    size_t limit() const
+    pre_impl(const T &t, const pre_ctx &ctx) : t_(t), ctx_(ctx)
     {
-        return limit_;
     }
-    bool verbose() const
+    ssize_t limit() const
     {
-        return v_;
+        return ctx_.limit;
+    }
+    bool human() const
+    {
+        return ctx_.human;
     }
     const T &inner() const
     {
         return t_;
     }
+    const pre_ctx &ctx() const
+    {
+        return ctx_;
+    }
+    pre_ctx next_ctx() const
+    {
+        auto ret = ctx_;
+        ret.depth--;
+        return ret;
+    }
 
 private:
     const T &t_;
-    bool v_{false};
-    size_t limit_{};
+    pre_ctx ctx_;
 };
 
-// If T is ostream-able
-// We trivially make util::pre<T> ostream-able
-template <typename T,
-          std::enable_if_t<ostreamable_v<T>, bool> = true,
-          std::enable_if_t<!std::is_array_v<T>, bool> = true>
-inline std::ostream &operator<<(std::ostream &os, const pre<T> &t)
+// Fallback cout of pre_impl<T> to cout of T itself.
+template <typename T, std::enable_if_t<ostreamable_v<T>, bool> = true>
+inline std::ostream &operator<<(std::ostream &os, const pre_impl<T> &t)
 {
     os << t.inner();
+    return os;
+}
+
+template <typename T>
+class pre
+{
+public:
+    static constexpr ssize_t kMax =
+        std::numeric_limits<decltype(pre_ctx::limit)>::max();
+    pre(const T &t,
+        ssize_t limit = kMax,
+        ssize_t depth = kMax,
+        bool human = false)
+        : t_(t), ctx_(pre_ctx{limit, depth, human})
+    {
+    }
+    pre(const T &t, const pre_ctx &ctx) : t_(t), ctx_(ctx)
+    {
+    }
+    ssize_t limit() const
+    {
+        return ctx_.limit;
+    }
+    bool human() const
+    {
+        return ctx_.human;
+    }
+    const T &inner() const
+    {
+        return t_;
+    }
+    const pre_ctx &ctx() const
+    {
+        return ctx_;
+    }
+    pre_ctx next_ctx() const
+    {
+        auto ret = ctx_;
+        ret.depth--;
+        return ret;
+    }
+
+private:
+    const T &t_;
+    pre_ctx ctx_;
+};
+
+// Fallback cout of pre<T> to pre_impl<T>,
+// with ctx.depth updated.
+// Stop going further if ctx.depth <= 0
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre<T> &t)
+{
+    auto ctx = t.ctx();
+    ctx.depth--;
+    if (ctx.depth < 0)
+    {
+        os << "...";
+        return os;
+    }
+    else
+    {
+        // ctx.depth >= 0
+        os << pre_impl<T>(t.inner(), ctx);
+    }
     return os;
 }
 
@@ -75,8 +183,10 @@ auto constexpr universally_presentable_v = false;
 template <typename T>
 auto constexpr universally_presentable_v<
     T,
-    std::void_t<decltype(std::cout << util::pre(std::declval<T>()))>> = true;
+    std::void_t<decltype(std::cout << util::pre_impl(std::declval<T>()))>> =
+    true;
 
+// below are helper class to combine the formating logics
 template <typename T>
 struct std_container_present_impl
 {
@@ -108,6 +218,89 @@ struct std_container_present_impl
     char rb_;
     char sep_;
 };
+
+// overloading pre<T>, does not touch ctx
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre<std_container_present_impl<T>> t)
+{
+    const auto &pre = t.inner();
+    const auto &obj = pre.inner();
+    auto ctx = t.ctx();  // copy here
+
+    size_t start_size = 0;
+    size_t end_size = 0;
+    size_t ommitted = 0;
+    size_t output_size = 0;
+    ssize_t obj_size = std::size(obj);
+    bool start_has_break = false;
+    if (t.limit() >= obj_size)
+    {
+        start_size = obj_size;
+        end_size = 0;
+        output_size = obj_size;
+        ommitted = 0;
+    }
+    else
+    {
+        start_size = (t.limit() + 1) / 2;
+        end_size = t.limit() - start_size;
+        output_size = start_size + end_size;
+        ommitted = obj_size - output_size;
+    }
+
+    size_t outputed_nr = 0;
+
+    os << pre.lb();
+    auto front_iter = std::cbegin(obj);
+    for (size_t i = 0; i < start_size; ++i)
+    {
+        os << util::pre(*front_iter, ctx);
+        outputed_nr++;
+        if (outputed_nr < output_size)
+        {
+            os << pre.sep() << " ";
+            start_has_break = true;
+        }
+        front_iter++;
+    }
+    if (ommitted)
+    {
+        if (start_size && !start_has_break)
+        {
+            os << pre.sep() << " ";
+        }
+        os << "...";
+
+        if (end_size > 0)
+        {
+            os << pre.sep() << " ";
+        }
+    }
+    // auto back_iter = obj.rbegin();
+    auto back_iter = std::rbegin(obj);
+
+    std::advance(back_iter, end_size);
+    for (size_t i = 0; i < end_size; ++i)
+    {
+        bool last = i + 1 == end_size;
+        if (!last)
+        {
+            os << util::pre(*back_iter, ctx) << pre.sep() << " ";
+        }
+        else
+        {
+            os << util::pre(*back_iter, ctx);
+        }
+        back_iter--;
+    }
+    os << pre.rb();
+    if (t.human())
+    {
+        os << " (sz: " << obj_size << ", ommitted " << ommitted << ")";
+    }
+    return os;
+}
 
 template <typename T>
 struct std_forward_container_present_impl
@@ -147,6 +340,7 @@ inline std::ostream &operator<<(
 {
     const auto &pre = t.inner();
     const auto &obj = pre.inner();
+    auto ctx = t.ctx();  // must copy here
 
     size_t output_size = t.limit();
 
@@ -162,7 +356,7 @@ inline std::ostream &operator<<(
     {
         for (size_t i = 0; i < output_size; ++i)
         {
-            os << util::pre(*front_iter);
+            os << util::pre(*front_iter, ctx);
             front_iter++;
             if (front_iter == obj.cend())
             {
@@ -180,6 +374,7 @@ inline std::ostream &operator<<(
     return os;
 }
 
+// Magic to print std::tuple<Types...>
 template <typename TupType, size_t... I>
 struct std_tuple_present_impl
 {
@@ -213,162 +408,113 @@ inline std::ostream &operator<<(std::ostream &os,
 
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os,
-                                const pre<std_container_present_impl<T>> t)
-{
-    const auto &pre = t.inner();
-    const auto &obj = pre.inner();
-
-    size_t start_size = 0;
-    size_t end_size = 0;
-    size_t ommitted = 0;
-    size_t output_size = 0;
-    size_t obj_size = std::size(obj);
-    bool start_has_break = false;
-    if (t.limit() >= obj_size)
-    {
-        start_size = obj_size;
-        end_size = 0;
-        output_size = obj_size;
-        ommitted = 0;
-    }
-    else
-    {
-        start_size = (t.limit() + 1) / 2;
-        end_size = t.limit() - start_size;
-        output_size = start_size + end_size;
-        ommitted = obj_size - output_size;
-    }
-
-    size_t outputed_nr = 0;
-
-    os << pre.lb();
-    auto front_iter = std::cbegin(obj);
-    for (size_t i = 0; i < start_size; ++i)
-    {
-        os << util::pre(*front_iter);
-        outputed_nr++;
-        if (outputed_nr < output_size)
-        {
-            os << pre.sep() << " ";
-            start_has_break = true;
-        }
-        front_iter++;
-    }
-    if (ommitted)
-    {
-        if (start_size && !start_has_break)
-        {
-            os << pre.sep() << " ";
-        }
-        os << "...";
-
-        if (end_size > 0)
-        {
-            os << pre.sep() << " ";
-        }
-    }
-    // auto back_iter = obj.rbegin();
-    auto back_iter = std::rbegin(obj);
-
-    std::advance(back_iter, end_size);
-    for (size_t i = 0; i < end_size; ++i)
-    {
-        bool last = i + 1 == end_size;
-        if (!last)
-        {
-            os << util::pre(*back_iter) << pre.sep() << " ";
-        }
-        else
-        {
-            os << util::pre(*back_iter);
-        }
-        back_iter--;
-    }
-    os << pre.rb();
-    if (t.verbose())
-    {
-        os << " (sz: " << obj_size << ", ommitted " << ommitted << ")";
-    }
-    return os;
-}
-
-template <typename T>
-inline std::ostream &operator<<(std::ostream &os,
-                                const pre<std::vector<T>> &vec)
+                                const pre_impl<std::vector<T>> &vec)
 {
     os << util::pre(std_container_present_impl(vec.inner(), '[', ']', ','),
-                    vec.verbose(),
-                    vec.limit());
-    return os;
-}
-
-template <typename T>
-inline std::ostream &operator<<(std::ostream &os, const pre<std::list<T>> &lst)
-{
-    os << util::pre(std_container_present_impl(lst.inner(), '[', ']', ','),
-                    lst.verbose(),
-                    lst.limit());
+                    vec.ctx());
     return os;
 }
 
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os,
-                                const pre<std::forward_list<T>> &lst)
+                                const pre_impl<std::list<T>> &lst)
+{
+    os << util::pre(std_container_present_impl(lst.inner(), '[', ']', ','),
+                    lst.ctx());
+    return os;
+}
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::forward_list<T>> &lst)
 {
     os << util::pre(
         std_forward_container_present_impl(lst.inner(), '[', ']', ','),
-        lst.verbose(),
-        lst.limit());
+        lst.ctx());
     return os;
 }
 
 template <typename T>
-inline std::ostream &operator<<(std::ostream &os, const pre<std::set<T>> &set)
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::set<T>> &set)
 {
     os << util::pre(std_container_present_impl(set.inner(), '{', '}', ','),
-                    set.verbose(),
-                    set.limit());
-    return os;
-}
-template <typename K, typename V>
-inline std::ostream &operator<<(std::ostream &os, const pre<std::map<K, V>> &m)
-{
-    os << util::pre(std_container_present_impl(m.inner(), '{', '}', ','),
-                    m.verbose(),
-                    m.limit());
-    return os;
-}
-template <typename K, typename V>
-inline std::ostream &operator<<(std::ostream &os,
-                                const pre<std::unordered_map<K, V>> &m)
-{
-    os << util::pre(
-        std_forward_container_present_impl(m.inner()), m.verbose(), m.limit());
+                    set.ctx());
     return os;
 }
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os,
-                                const pre<std::unordered_set<T>> &set)
+                                const pre_impl<std::multiset<T>> &set)
 {
-    os << util::pre(std_forward_container_present_impl(set.inner()),
-                    set.verbose(),
-                    set.limit());
+    os << util::pre(std_container_present_impl(set.inner(), '{', '}', ','),
+                    set.ctx());
+    return os;
+}
+template <typename K, typename V>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::map<K, V>> &m)
+{
+    os << util::pre(std_container_present_impl(m.inner(), '{', '}', ','),
+                    m.ctx());
+    return os;
+}
+template <typename K, typename V>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::multimap<K, V>> &m)
+{
+    os << util::pre(std_container_present_impl(m.inner(), '{', '}', ','),
+                    m.ctx());
+    return os;
+}
+template <typename K, typename V>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::unordered_map<K, V>> &m)
+{
+    os << util::pre(
+        std_forward_container_present_impl(m.inner(), '{', '}', ','), m.ctx());
+    return os;
+}
+template <typename K, typename V>
+inline std::ostream &operator<<(
+    std::ostream &os, const pre_impl<std::unordered_multimap<K, V>> &m)
+{
+    os << util::pre(
+        std_forward_container_present_impl(m.inner(), '{', '}', ','), m.ctx());
+    return os;
+}
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::unordered_set<T>> &set)
+{
+    os << util::pre(
+        std_forward_container_present_impl(set.inner(), '{', '}', ','),
+        set.ctx());
+    return os;
+}
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::unordered_multiset<T>> &set)
+{
+    os << util::pre(
+        std_forward_container_present_impl(set.inner(), '{', '}', ','),
+        set.ctx());
     return os;
 }
 template <typename T, size_t size>
 inline std::ostream &operator<<(std::ostream &os,
-                                const pre<std::array<T, size>> &p)
+                                const pre_impl<std::array<T, size>> &p)
 {
-    os << util::pre(
-        std_container_present_impl(p.inner()), p.verbose(), p.limit());
+    os << util::pre(std_container_present_impl(p.inner(), '[', ']', ','),
+                    p.ctx());
     return os;
 }
 
 template <typename T>
-inline std::ostream &operator<<(std::ostream &os, const pre<std::deque<T>> &p)
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::deque<T>> &p)
 {
-    os << util::pre(
-        std_container_present_impl(p.inner()), p.verbose(), p.limit());
+    os << util::pre(std_container_present_impl(p.inner(), '[', ']', ','),
+                    p.ctx());
     return os;
 }
 
@@ -379,10 +525,9 @@ using c_style_array = T[size];
 
 template <typename T, size_t size>
 inline std::ostream &operator<<(std::ostream &os,
-                                const pre<c_style_array<T, size>> &p)
+                                const pre_impl<c_style_array<T, size>> &p)
 {
-    auto a = util::pre(
-        std_container_present_impl(p.inner()), p.verbose(), p.limit());
+    auto a = util::pre(std_container_present_impl(p.inner()), p.ctx());
     os << a;
     return os;
 }
@@ -410,13 +555,16 @@ inline std::ostream &operator<<(std::ostream &os, const pre<char> &p)
     return os;
 }
 
+// We do not consider std::pair, std::tuple, std::optinoal, std::atomic, ...
+// as one step deeper.
+// So, use pre<> instead of pre_impl<>
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os,
                                 const pre<std::optional<T>> &t)
 {
     if (t.inner().has_value())
     {
-        os << "some(" << util::pre(t.inner().value()) << ")";
+        os << "some(" << util::pre(t.inner().value(), t.ctx()) << ")";
     }
     else
     {
@@ -447,8 +595,8 @@ inline std::ostream &operator<<(std::ostream &os, const pre<bool> &p)
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os, const pre<std::atomic<T>> &t)
 {
-    os << "atomic(" << util::pre(t.inner().load(std::memory_order_relaxed))
-       << ")";
+    os << "atomic("
+       << util::pre(t.inner().load(std::memory_order_relaxed), t.ctx()) << ")";
     return os;
 }
 
@@ -456,7 +604,8 @@ template <typename T, typename U>
 inline std::ostream &operator<<(std::ostream &os, const pre<std::pair<T, U>> &s)
 {
     const auto &t = s.inner();
-    os << "(" << util::pre(t.first) << ", " << util::pre(t.second) << ")";
+    os << "(" << util::pre(t.first, s.ctx()) << ", "
+       << util::pre(t.second, s.ctx()) << ")";
     return os;
 }
 
@@ -475,12 +624,14 @@ const typename ADAPTER::container_type &get_container(const ADAPTER &a)
     return hack::get(a);
 }
 
+// for adaptors, we fordward straightly.
+// Use pre<> instead of pre_impl<>
 template <typename T>
 inline std::ostream &operator<<(std::ostream &os, const pre<std::queue<T>> &s)
 {
     const auto &t = s.inner();
     const auto &c = get_container(t);
-    os << util::pre(c);
+    os << util::pre(c, s.ctx());
     return os;
 }
 
@@ -489,7 +640,7 @@ inline std::ostream &operator<<(std::ostream &os, const pre<std::stack<T>> &s)
 {
     const auto &t = s.inner();
     const auto &c = get_container(t);
-    os << util::pre(c);
+    os << util::pre(c, s.ctx());
     return os;
 }
 
@@ -499,7 +650,7 @@ inline std::ostream &operator<<(std::ostream &os,
 {
     const auto &t = s.inner();
     const auto &c = get_container(t);
-    os << util::pre(c);
+    os << util::pre(c, s.ctx());
     return os;
 }
 
@@ -524,18 +675,24 @@ struct ubiq
 template <size_t>
 using ubiq_t = ubiq;
 
+// select the one with T{Ubiqs{}...} a valid statement (compiled and has type)
+// Since Ubiqs{} can turn into any types,
+// It only succeeds when number of Ubiqs{}... equals to the # of fields of T.
+// With too many Ubiqs{}..., CE: excess elements in struct initializer
 template <typename T, typename... Ubiqs>
 constexpr auto count_r(size_t &sz, int) -> std::void_t<decltype(T{Ubiqs{}...})>
 {
     sz = sizeof...(Ubiqs);
 }
 
+// effectively calling count_r<T, Ubiqs - 1>
 template <typename T, typename, typename... Ubiqs>
 constexpr auto count_r(size_t &sz, float)
 {
     count_r<T, Ubiqs...>(sz, 0);
 }
 
+// Return the number of fields in T
 template <typename T, size_t... Is>
 constexpr auto count(std::index_sequence<Is...>)
 {
@@ -617,13 +774,15 @@ DEFINE_AS_TUPLE(32, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, 
 // clang-format on
 }  // namespace fallback
 
+// We consider aggregated structures as containers
+// use pre_impl to update ctx
 template <typename T, std::enable_if_t<!ostreamable_v<T>, bool> = true>
-inline std::ostream &operator<<(std::ostream &os, const pre<T> &t)
+inline std::ostream &operator<<(std::ostream &os, const pre_impl<T> &t)
 {
     auto tup = util::fallback::as_tuple(
         t.inner(),
         std::integral_constant<size_t, util::fallback::count<T>()>{});
-    os << "{Unknown " << util::pre(tup) << "}";
+    os << "{Unknown " << util::pre(tup, t.ctx()) << "}";
     return os;
 }
 

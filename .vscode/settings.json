@@ -80,7 +80,8 @@
         "mutex": "cpp",
         "ratio": "cpp",
         "__functional_base": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "stack": "cpp"
     },
     "editor.formatOnSave": true
 }

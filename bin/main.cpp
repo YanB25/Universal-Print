@@ -40,8 +40,8 @@ int main()
     std::vector<int> vec{1, 2, 3, 4, 5};
     std::cout << util::pre(vec) << std::endl;
 
-    std::cout << util::pre(vec, true, 2) << std::endl;
-    std::cout << util::pre(vec, false, 0) << std::endl;
+    std::cout << util::pre(vec, 2, 100, true) << std::endl;
+    std::cout << util::pre(vec, 0, 100, false) << std::endl;
 
     std::cout << util::pre(5) << std::endl;
     Person p{.name = "Alice", .age = 20};
@@ -55,7 +55,7 @@ int main()
     };
     std::cout << util::pre(persons) << std::endl;
     // [{Person A age: 25}, {Person B age: 30}, {Person C age: 45}]
-    std::cout << util::pre(persons, false, 1) << std::endl;
+    std::cout << util::pre(persons, 1, 100, false) << std::endl;
     // [{Person A age: 25}, ...]
 
     std::map<std::string, Person> m;
@@ -64,9 +64,9 @@ int main()
     m["employee2"] = Person{.name = "C", .age = 30};
     m["employee4"] = Person{.name = "D", .age = 30};
     std::cout << "map: " << util::pre(m) << std::endl;
-    std::cout << "map: " << util::pre(m, false, 0) << std::endl;
-    std::cout << "map: " << util::pre(m, false, 1) << std::endl;
-    std::cout << "map: " << util::pre(m, false, 2) << std::endl;
+    std::cout << "map: " << util::pre(m, 0, 100, false) << std::endl;
+    std::cout << "map: " << util::pre(m, 1, 100, false) << std::endl;
+    std::cout << "map: " << util::pre(m, 2, 100, false) << std::endl;
     // {("boss", {Person A age: 70}), ("employee", {Person B age: 30})}
 
     std::vector<std::vector<Person>> matrix;
@@ -77,6 +77,14 @@ int main()
     std::cout << "matrix: " << util::pre(matrix) << std::endl;
     // [[{Person A age: 10}, {Person B age: 20}], [{Person C age: 30}, {Person D
     // age: 40}]]
+    std::cout << "matrix(3): " << util::pre(matrix, 100, 3) << std::endl;
+    // matrix(3): [[{Person A age: 10}, {Person B age: 20}], [{Person C age:
+    // 30}, {Person D age: 40}]]
+    std::cout << "matrix(2): " << util::pre(matrix, 100, 2) << std::endl;
+    // matrix(2): [[..., ...], [..., ...]]
+    std::cout << "matrix(1): " << util::pre(matrix, 100, 1) << std::endl;
+    // matrix(1): [..., ...]
+    std::cout << "matrix(0): " << util::pre(matrix, 100, 0) << std::endl;
 
     std::pair<int, int> pair{100, 200};
     std::cout << "pair: " << util::pre(pair) << std::endl;
@@ -93,21 +101,24 @@ int main()
     fl.push_front(Person{.name = "C", .age = 1});
     std::cout << "forward_list: " << util::pre(fl) << std::endl;
     // forward_list: [{Person B age: 1}, {Person A age: 1}]
-    std::cout << "forward_list: " << util::pre(fl, false, 1) << std::endl;
+    std::cout << "forward_list: " << util::pre(fl, 1, 100, false) << std::endl;
     // forward_list(omit): [{Person B age: 1}, ...]
-    std::cout << "forward_list: " << util::pre(fl, false, 2) << std::endl;
+    std::cout << "forward_list: " << util::pre(fl, 2, 100, false) << std::endl;
     // forward_list: [{Person C age: 1}, {Person B age: 1}, ...]
-    std::cout << "forward_list: " << util::pre(fl, false, 0) << std::endl;
+    std::cout << "forward_list: " << util::pre(fl, 0, 100, false) << std::endl;
     // forward_list: [...]
 
     int c_array[] = {2, 4, 6, 8, 10};
     std::cout << "c style array: " << util::pre(c_array) << std::endl;
     // c style array: [2, 4, 6, 8, 10]
-    std::cout << "c style array: " << util::pre(c_array, false, 1) << std::endl;
+    std::cout << "c style array: " << util::pre(c_array, 1, 100, false)
+              << std::endl;
     // c style array: [2, ...]
-    std::cout << "c style array: " << util::pre(c_array, false, 2) << std::endl;
+    std::cout << "c style array: " << util::pre(c_array, 2, 100, false)
+              << std::endl;
     // c style array: [2, ..., 8]
-    std::cout << "c style array: " << util::pre(c_array, false, 0) << std::endl;
+    std::cout << "c style array: " << util::pre(c_array, 0, 100, false)
+              << std::endl;
     // c style array: [...]
 
     std::cout << "c style string: " << util::pre("hello world") << std::endl;
