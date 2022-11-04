@@ -28,7 +28,7 @@ UP works with adaptors, e.g., `std::queue`, `std::stack`, without data movement.
 std::queue<int> queue; // assume it has [1, 2, 3, 4]
 std::cout << "queue:" << util::pre(queue) << std::endl
 // queue: [0, 1, 2, 3]
-// ** YES, UP works with adaptors.
+// ** YES, UP works with queue.
 ```
 
 ### Custom *Cout-able* Types
@@ -162,6 +162,37 @@ std::cout << "char: " << util::pre('a') << std::endl;
 // char: 'a'
 std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
+```
+
+### Ensurance of No Data Movement
+
+UP avoids any data movement, i.e., no copy and no move occurs.
+
+Consider a non-copyable and non-movable type called `Pin`.
+
+``` c++
+class Pin
+{
+    // All copy and move deleted
+    Pin() = delete;
+    Pin(const Pin &) = delete;
+    Pin(Pin &&) = delete;
+    Pin &operator=(const Pin &) = delete;
+    Pin &&operator=(Pin &&) = delete;
+};
+// with operator<< overloaded
+```
+
+UP is able to print it even if it is stored in some non-iterable adaptors, e.g., `std::queue`.
+
+``` c++
+std::queue<Pin> queue;
+for (int i = 5; i < 10; ++i)
+{
+    queue.emplace(i); // in-place construction
+}
+std::cout << util::pre(queue) << std::endl; // no copy occurred
+// [{Pin 5}, {Pin 6}, {Pin 7}, {Pin 8}, {Pin 9}]
 ```
 
 ### Applicability
