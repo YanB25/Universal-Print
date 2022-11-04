@@ -527,7 +527,8 @@ template <typename T, size_t size>
 inline std::ostream &operator<<(std::ostream &os,
                                 const pre_impl<c_style_array<T, size>> &p)
 {
-    auto a = util::pre(std_container_present_impl(p.inner()), p.ctx());
+    std_container_present_impl c_array_pre(p.inner());
+    auto a = util::pre(c_array_pre, p.ctx());
     os << a;
     return os;
 }
