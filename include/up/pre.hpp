@@ -549,7 +549,11 @@ inline std::ostream &operator<<(std::ostream &os, const pre<std::string> &p)
     os << "\"" << p.inner() << "\"";
     return os;
 }
-
+inline std::ostream &operator<<(std::ostream &os, const pre<std::byte> &p)
+{
+    os << "'" << (char) p.inner() << "'";
+    return os;
+}
 inline std::ostream &operator<<(std::ostream &os, const pre<char> &p)
 {
     os << "'" << p.inner() << "'";

@@ -157,6 +157,10 @@ int main()
         }
         std::cout << util::pre(q) << std::endl;
     }
+    {
+        std::byte a{'h'};
+        std::cout << util::pre(a) << std::endl;
+    }
 
     return 0;
 }
