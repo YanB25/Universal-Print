@@ -10,7 +10,7 @@ The header is [here](include/up/pre.hpp).
 
 ### Primitive Types
 
-UP can prints containers of primitive types with customized control.
+UP can print containers of primitive types with customized control.
 
 ``` c++
 std::vector<int> vec{1, 2, 3, 4, 5};
@@ -113,16 +113,19 @@ std::cout << util::pre(obj) << std::endl;
 // {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
 ```
 
-In this case, the field names of the class are wiped out, since C++ does not support [reflection](https://en.cppreference.com/w/cpp/keyword/reflexpr).
+*Limitations*:
+
+The labels of the class are wiped out. UP is unable to preserve them since C++ does not support [reflection](https://en.cppreference.com/w/cpp/keyword/reflexpr).
 
 This feature heavily relies on [structured binding (C++17)](https://en.cppreference.com/w/cpp/language/structured_binding). Therefore, it does not recognize
-- C style array
+
+- C-style array
 - std::optional
 - ... (maybe more)
 
-Explicitly overload `operator<<` in this case.
+Solve compile failure by explicitly overloading `operator<<` in this case.
 
-Codes borrowed from [ezprint](https://github.com/Sinacam/ezprint). 
+This feature borrowed codes from [ezprint](https://github.com/Sinacam/ezprint).
 
 ### Other STL Wrappers and C-style Types
 
@@ -140,6 +143,7 @@ std::tuple<Person, int, int, int> t{
 std::cout << "tuple: " << util::pre(t) << std::endl;
 // tuple: <{Person tuple age: 4}, 2, 3, 4>
 ```
+
 UP handles `std::tuple<Types...>` well.
 
 
@@ -208,6 +212,8 @@ UP supports most, if not all, STL wrappers. Including
 Feature requests are welcomed.
 
 For getting a `std::string`, UP provides a similar `util::pre_str`.
+
+NOTE: the output of `std::vector<bool>` is platform-specific, due to the [specialization of bool vector](https://en.cppreference.com/w/cpp/container/vector_bool) in STL specification.
 
 ## Use UP Universally
 
