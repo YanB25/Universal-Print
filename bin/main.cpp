@@ -162,5 +162,8 @@ int main()
         std::cout << util::pre(a) << std::endl;
     }
 
+    int hei_you = 5;
+    std::cout << PRE(hei_you) << std::endl;
+
     return 0;
 }

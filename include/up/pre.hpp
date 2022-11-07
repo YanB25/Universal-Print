@@ -791,6 +791,27 @@ inline std::ostream &operator<<(std::ostream &os, const pre_impl<T> &t)
     return os;
 }
 
+template <typename T>
+struct pre_with_name
+{
+    pre_with_name(const T &t, const char *n) : t_(t), name_(n)
+    {
+    }
+
+    const T &t_;
+    const char *name_;
+};
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre_with_name<T> &p)
+{
+    os << p.name_ << ": " << util::pre(p.t_);
+    return os;
+}
+
+#define __UP_get_name(var) #var
+#define PRE(var) util::pre_with_name(var, __UP_get_name(var))
+
 }  // namespace util
 
 #endif

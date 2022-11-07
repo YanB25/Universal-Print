@@ -170,6 +170,16 @@ std::cout << "boolean: " << util::pre(true) << std::endl;
 // boolean: true
 ```
 
+### With Variable Name
+
+UP provides a similar `PRE` to show variable name.
+
+``` c++
+int hey_you = 5;
+std::cout << PRE(hei_you) << std::endl;
+// hei_you: 5
+```
+
 ### Ensurance of No Data Movement
 
 UP avoids any data movement, i.e., no copy and no move occurs.
