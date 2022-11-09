@@ -110,8 +110,10 @@ struct Obj
 
 Obj obj = {42, "42", {1, 2, 3}, {{5, 2}, {7, 11}}, 10, false};
 std::cout << util::pre(obj) << std::endl;
-// {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
+// {Obj <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
 ```
+
+UP is able to retrieve the typename, i.e., `Obj`.
 
 *Limitations*:
 

@@ -14,6 +14,7 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -41,6 +42,8 @@
 // e.g., std_container_present_impl is a helper of T
 // let util::pre<T> be cout-able, so that ctx.depth is not touched
 
+namespace util
+{
 template <typename T, typename = void>
 auto constexpr ostreamable_v = false;
 template <typename T>
@@ -48,8 +51,68 @@ auto constexpr ostreamable_v<
     T,
     std::void_t<decltype(std::cout << std::declval<T>())>> = true;
 
-namespace util
+namespace names
 {
+// Checks magic_enum compiler compatibility.
+#if defined(__clang__) && __clang_major__ >= 5 || \
+    defined(__GNUC__) && __GNUC__ >= 9 ||         \
+    defined(_MSC_VER) && _MSC_VER >= 1910
+#undef MAGIC_ENUM_SUPPORTED
+#define MAGIC_ENUM_SUPPORTED 1
+#endif
+
+#ifdef MAGIC_ENUM_SUPPORTED
+std::string_view pretty_name(std::string_view name) noexcept
+{
+    for (std::size_t i = name.size(); i > 0; --i)
+    {
+        if (name[i - 1] == '=')
+        {
+            name.remove_prefix(i);
+        }
+    }
+    if (name.size() > 0 && name[0] == ' ')
+    {
+        name.remove_prefix(1);
+        return name;
+    }
+    return {};  // Invalid name.
+}
+
+template <typename E, E V>
+constexpr auto get_type_value_name() noexcept
+{
+    static_assert(std::is_enum_v<E>,
+                  "magic_enum::detail::n requires enum type.");
+    auto name =
+        pretty_name({__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__) - 2});
+    return name;
+}
+
+template <typename E>
+constexpr auto get_type_name() noexcept
+{
+    auto name =
+        pretty_name({__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__) - 2});
+    return name;
+}
+#else
+
+template <typename E>
+constexpr auto get_type_name() noexcept
+{
+    return std::string_view{};
+}
+
+template <typename E, E V>
+constexpr auto get_type_value_name() noexcept
+{
+    return std::string_view{};
+}
+
+#endif
+}  // namespace names
+
 struct pre_ctx
 {
     pre_ctx(ssize_t l, ssize_t d, bool h) : limit(l), depth(d), human(h)
@@ -787,7 +850,8 @@ inline std::ostream &operator<<(std::ostream &os, const pre_impl<T> &t)
     auto tup = util::fallback::as_tuple(
         t.inner(),
         std::integral_constant<size_t, util::fallback::count<T>()>{});
-    os << "{Unknown " << util::pre(tup, t.ctx()) << "}";
+    os << "{" << names::get_type_name<T>() << " " << util::pre(tup, t.ctx())
+       << "}";
     return os;
 }
 

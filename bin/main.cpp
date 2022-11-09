@@ -135,7 +135,7 @@ int main()
     std::cout << "B: " << obj_b << std::endl;
 
     {
-        struct S
+        struct Obj
         {
             int x;
             std::string s;
@@ -144,9 +144,9 @@ int main()
             std::atomic<int> a;
             bool b;
         };
-        S s = {42, "42", {1, 2, 3}, {{5, 2}, {7, 11}}, 10, false};
+        Obj s = {42, "42", {1, 2, 3}, {{5, 2}, {7, 11}}, 10, false};
         std::cout << util::pre(s) << std::endl;
-        // {Unknown <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
+        // {Obj <42, "42", [1, 2, 3], {(5, 2), (7, 11)}, atomic(10), false>}
     }
 
     {
@@ -164,6 +164,27 @@ int main()
 
     int hei_you = 5;
     std::cout << PRE(hei_you) << std::endl;
+
+    {
+        // enum Color
+        // {
+        //     RED,
+        //     BLUE,
+        //     GREEN
+        // };
+        // constexpr auto e = Color::RED;
+        // constexpr size_t cnt = util::fallback::count<Color>();
+        // constexpr size_t idx = util::index_of<Color>(e);
+        // std::cout << "it is " << idx;
+        // constexpr auto name = util::n<Color, Color::RED>();
+        // auto name = util::n<Color, e>();
+        // std::cout << "it is " << name << std::endl;
+        // std::cout << util::get_type_name<Color>() << std::endl;
+        std::vector<int> vec;
+        std::cout << util::names::get_type_name<decltype(vec)>() << std::endl;
+        int array[5][4];
+        std::cout << util::names::get_type_name<decltype(array)>() << std::endl;
+    }
 
     return 0;
 }
