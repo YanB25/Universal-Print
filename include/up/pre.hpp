@@ -4,6 +4,7 @@
 
 #include <array>
 #include <atomic>
+#include <cstddef>
 #include <deque>
 #include <forward_list>
 #include <iostream>
