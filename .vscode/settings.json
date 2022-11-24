@@ -81,7 +81,16 @@
         "ratio": "cpp",
         "__functional_base": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "condition_variable": "cpp"
     },
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/include"
+    ],
+    "C_Cpp.default.compileCommands": "",
+    "C_Cpp.default.compilerArgs": [
+        "-std=c++17",
+        "-Wall"
+    ]
 }
