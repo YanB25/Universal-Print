@@ -1,4 +1,4 @@
-# Universal Print: A Header-only C++ Library to cout STL Containers and More
+# Universal Print: A Header-only C++ Library to cout STL Containers and More [![CMake](https://github.com/YanB25/Universal-Print/actions/workflows/cmake.yml/badge.svg)](https://github.com/YanB25/Universal-Print/actions/workflows/cmake.yml)
 
 This library, UP (Universal Print), helps you to `std::cout` most C++ STL containers in addition to the primitive types, as long as you make the underlying object `T` *cout-able*.
 
