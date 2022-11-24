@@ -25,18 +25,6 @@ jobs:
       with:
         submodules: true
         
-    - name: Install Dependencies
-      run: |
-            if [ "$RUNNER_OS" == "Linux" ]; then
-              sudo apt install -y libgflags-dev libgoogle-glog-dev
-            elif [ "$RUNNER_OS" == "macOS" ]; then
-              brew install glog gflags
-            else
-              echo "$RUNNER_OS not supported"
-              exit 1
-            fi
-      shell: bash
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
