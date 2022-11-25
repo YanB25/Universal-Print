@@ -3,7 +3,7 @@ foreach (TEST ${TEST_SRC})
     get_filename_component(TEST_NAME ${TEST} NAME_WE)
     add_executable(${TEST_NAME} ${TEST})
     target_include_directories(${TEST_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
-    target_link_libraries(${TEST_NAME} PRIVATE GTest::gtest)
+    target_link_libraries(${TEST_NAME} PRIVATE gtest_main)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
 
