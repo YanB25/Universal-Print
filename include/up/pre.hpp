@@ -11,6 +11,7 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <memory>
 #include <optional>
 #include <queue>
 #include <set>
@@ -580,6 +581,21 @@ inline std::ostream &operator<<(std::ostream &os,
 {
     os << util::pre(std_container_present_impl(p.inner(), '[', ']', ','),
                     p.ctx());
+    return os;
+}
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::shared_ptr<T>> &p)
+{
+    os << "shared_ptr(" << *p.inner() << ")";
+    return os;
+}
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_impl<std::unique_ptr<T>> &p)
+{
+    os << "unique_ptr(" << *p.inner() << ")";
     return os;
 }
 
