@@ -64,7 +64,7 @@ namespace names
 #endif
 
 #ifdef MAGIC_ENUM_SUPPORTED
-std::string_view pretty_name(std::string_view name) noexcept
+inline std::string_view pretty_name(std::string_view name) noexcept
 {
     for (std::size_t i = name.size(); i > 0; --i)
     {
@@ -82,7 +82,7 @@ std::string_view pretty_name(std::string_view name) noexcept
 }
 
 template <typename E, E V>
-constexpr auto get_type_value_name() noexcept
+inline constexpr auto get_type_value_name() noexcept
 {
     static_assert(std::is_enum_v<E>,
                   "magic_enum::detail::n requires enum type.");
@@ -92,7 +92,7 @@ constexpr auto get_type_value_name() noexcept
 }
 
 template <typename E>
-constexpr auto get_type_name() noexcept
+inline constexpr auto get_type_name() noexcept
 {
     auto name =
         pretty_name({__PRETTY_FUNCTION__, sizeof(__PRETTY_FUNCTION__) - 2});
@@ -101,13 +101,13 @@ constexpr auto get_type_name() noexcept
 #else
 
 template <typename E>
-constexpr auto get_type_name() noexcept
+inline constexpr auto get_type_name() noexcept
 {
     return std::string_view{};
 }
 
 template <typename E, E V>
-constexpr auto get_type_value_name() noexcept
+inline constexpr auto get_type_value_name() noexcept
 {
     return std::string_view{};
 }
