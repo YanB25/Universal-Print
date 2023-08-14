@@ -34,6 +34,10 @@ int main()
     {
         queue.emplace(i);
     }
+
+    constexpr std::array<int, 2> arr{1, 2};
+    static_assert(arr[0] == 1);
+
     std::cout << util::pre(queue) << std::endl;
     return 0;
 }

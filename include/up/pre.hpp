@@ -4,7 +4,7 @@
 
 #include <array>
 #include <atomic>
-#include <cstddef>
+#include <bitset>
 #include <deque>
 #include <forward_list>
 #include <iostream>
@@ -116,6 +116,110 @@ inline constexpr auto get_type_value_name() noexcept
 #endif
 }  // namespace names
 
+// temporarily change cout flags
+template <typename T, std::ios_base::fmtflags FLAGS>
+class pre_with_flag
+{
+public:
+    pre_with_flag(const T &t) : t_(t)
+    {
+    }
+
+    const T &t_;
+};
+
+template <typename T>
+struct pre_hex
+{
+    pre_hex(const T &t) : inner_(t)
+    {
+    }
+    pre_with_flag<T, std::ios_base::hex> inner_;
+};
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre_hex<T> &p)
+{
+    os << p.inner_;
+    return os;
+}
+
+template <typename T>
+struct pre_oct
+{
+    pre_oct(const T &t) : inner_(t)
+    {
+    }
+    pre_with_flag<T, std::ios_base::oct> inner_;
+};
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre_oct<T> &p)
+{
+    os << p.inner_;
+    return os;
+}
+
+template <typename T>
+struct pre_dec
+{
+    pre_dec(const T &t) : inner_(t)
+    {
+    }
+    pre_with_flag<T, std::ios_base::dec> inner_;
+};
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre_dec<T> &p)
+{
+    os << p.inner_;
+    return os;
+}
+
+template <typename T>
+struct pre_ptr
+{
+    pre_ptr(const T &t) : t_(t)
+    {
+    }
+    const T &t_;
+};
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre_ptr<T> &p)
+{
+    os << "0x" << pre_hex(p.t_);
+    return os;
+}
+
+template <typename T, std::ios_base::fmtflags FLAGS>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_with_flag<T, FLAGS> &p)
+{
+    std::ios_base::fmtflags f(os.flags());
+    os.setf(FLAGS, std::ios_base::basefield);
+    os << p.t_;
+    os.flags(f);
+    return os;
+}
+
+// C++ does not provide std::ios_base::bin, make it
+template <typename T>
+struct pre_bin
+{
+    pre_bin(const T &t) : t_(t)
+    {
+    }
+    const T &t_;
+};
+template <typename T>
+inline std::ostream &operator<<(std::ostream &os, const pre_bin<T> &p)
+{
+    const char *beg = reinterpret_cast<const char *>(&(p.t_));
+    const char *end = beg + sizeof(T);
+    while (beg != end)
+    {
+        os << std::bitset<8>(*--end);
+    }
+    return os;
+}
+
 struct pre_ctx
 {
     pre_ctx(ssize_t l, ssize_t d, bool h) : limit(l), depth(d), human(h)
@@ -125,6 +229,7 @@ struct pre_ctx
     ssize_t limit{std::numeric_limits<decltype(limit)>::max()};
     ssize_t depth{std::numeric_limits<decltype(depth)>::max()};
     bool human{false};
+    bool quote_string{true};
 };
 
 template <typename T>
@@ -216,6 +321,12 @@ public:
         auto ret = ctx_;
         ret.depth--;
         return ret;
+    }
+    operator std::string()
+    {
+        std::stringstream ss;
+        ss << t_;
+        return ss.str();
     }
 
 private:
@@ -621,7 +732,8 @@ template <size_t size>
 inline std::ostream &operator<<(std::ostream &os,
                                 const pre<c_style_string<size>> &p)
 {
-    os << "\"" << (const char *) p.inner() << "\"";
+    const char *quote = p.ctx().quote_string ? "\"" : "";
+    os << quote << (const char *) p.inner() << quote;
     return os;
 }
 
@@ -891,9 +1003,164 @@ inline std::ostream &operator<<(std::ostream &os, const pre_with_name<T> &p)
     return os;
 }
 
+template <typename T, typename... Ts>
+struct pre_with_names
+{
+    pre_with_names(const T &t, const Ts &...ts)
+        : ptrs_({(void *) &t, (void *) &ts...})
+    {
+    }
+    std::vector<void *> ptrs_;
+};
+
+template <typename T, typename... Ts>
+struct pre_with_names_view
+{
+    pre_with_names_view(size_t idx, const std::vector<void *> &view)
+        : idx_(idx), views_(view)
+    {
+    }
+    mutable size_t idx_{};
+    const std::vector<void *> &views_{};
+};
+
+template <typename T, typename... Ts>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_with_names<T, Ts...> &p)
+{
+    pre_with_names_view<T, Ts...> view(0, p.ptrs_);
+    os << view;
+    return os;
+}
+
+template <typename T, typename... Ts>
+inline std::ostream &operator<<(std::ostream &os,
+                                const pre_with_names_view<T, Ts...> &view)
+{
+    pre_ctx ctx;
+    // C macro store the name as c_style_string,
+    // but we don't want to print the quote.
+    ctx.quote_string = false;
+
+    os << util::pre(*(T *) (view.views_[view.idx_]), ctx);
+    if constexpr (sizeof...(Ts) > 0)
+    {
+        os << pre_with_names_view<Ts...>(view.idx_ + 1, view.views_);
+    }
+    return os;
+}
+
+#define PRE_STR(a) #a, ": ", a
+#define VA_NUM_ARGS(...) \
+    VA_NUM_ARGS_IMPL(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#define VA_NUM_ARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+
+#define CONCAT_IMPL(x, y) x##y
+#define MACRO_CONCAT(x, y) CONCAT_IMPL(x, y)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_1(a) PRE_STR(a)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_2(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_1(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_3(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_2(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_4(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_3(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_5(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_4(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_6(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_5(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_7(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_6(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_8(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_7(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_9(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_8(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG_10(a, ...) \
+    PRE_STR(a), ", ", PREPEND_EACH_ARG_WITH_HASH_ARG_9(__VA_ARGS__)
+#define PREPEND_EACH_ARG_WITH_HASH_ARG(...)                                 \
+    MACRO_CONCAT(PREPEND_EACH_ARG_WITH_HASH_ARG_, VA_NUM_ARGS(__VA_ARGS__)) \
+    (__VA_ARGS__)
+
+#define NUMARGS(...) (sizeof((int[]){__VA_ARGS__}) / sizeof(int))
+
 #define __UP_get_name(var) #var
 #define PRE(var) util::pre_with_name(var, __UP_get_name(var))
+#define PRES(...) \
+    util::pre_with_names(PREPEND_EACH_ARG_WITH_HASH_ARG(__VA_ARGS__))
 
 }  // namespace util
+
+#ifdef USE_FMT_LIB
+#include <fmt/format.h>
+template <typename T>
+struct fmt::formatter<util::pre<T>>
+{
+    // Parses format specifications of the form ['f' | 'e'].
+    constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin())
+    {
+        // Parse the presentation format and store it in the formatter:
+        auto it = ctx.begin(), end = ctx.end();
+        constexpr const char *expect_str = "}";
+        auto *expect_it = expect_str;
+        auto *expect_end = expect_it + strlen(expect_str);
+        while (it != end)
+        {
+            if (expect_it != expect_end && *it == *expect_it)
+            {
+                it++;
+                expect_it++;
+            }
+            else
+            {
+                throw format_error(
+                    "Invalid format. Default type T only support {}");
+            }
+        }
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const util::pre<T> &p, FormatContext &ctx) const
+        -> decltype(ctx.out())
+    {
+        return fmt::format_to(ctx.out(), "{}", util::pre_str(p));
+    }
+};
+
+template <typename T>
+struct fmt::formatter<util::pre_with_name<T>>
+{
+    // Parses format specifications of the form ['f' | 'e'].
+    constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin())
+    {
+        // Parse the presentation format and store it in the formatter:
+        auto it = ctx.begin(), end = ctx.end();
+        constexpr const char *expect_str = "}";
+        auto *expect_it = expect_str;
+        auto *expect_end = expect_it + strlen(expect_str);
+        while (it != end)
+        {
+            if (expect_it != expect_end && *it == *expect_it)
+            {
+                it++;
+                expect_it++;
+            }
+            else
+            {
+                throw format_error(
+                    "Invalid format. Default type T only support {}");
+            }
+        }
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const util::pre_with_name<T> &p, FormatContext &ctx) const
+        -> decltype(ctx.out())
+    {
+        return fmt::format_to(ctx.out(), "{}", util::pre_str(p));
+    }
+};
+
+#endif
 
 #endif

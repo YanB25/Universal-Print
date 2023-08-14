@@ -186,5 +186,14 @@ int main()
         std::cout << util::names::get_type_name<decltype(array)>() << std::endl;
     }
 
+    {
+        // PRES
+        int a = 10;
+        float b = 5;
+        const char *name = "Bin";
+        std::vector<int> vec{1, 2, 3};
+        std::cout << PRES(a, b, name, vec) << std::endl;
+    }
+
     return 0;
 }

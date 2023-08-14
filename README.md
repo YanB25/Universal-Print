@@ -174,13 +174,26 @@ std::cout << "boolean: " << util::pre(true) << std::endl;
 
 ### With Variable Name
 
-UP provides a similar `PRE` to show variable name.
+UP provides a convenient `PRE` and `PRES` to show variables with their names.
 
 ``` c++
 int hey_you = 5;
 std::cout << PRE(hei_you) << std::endl;
 // hei_you: 5
 ```
+
+``` c++
+int a = 10;
+float b = 5;
+const char *name = "Bin";
+std::vector<int> vec{1, 2, 3};
+std::cout << PRES(a, b, name, vec) << std::endl;
+// a: 10, b: 5, name: Bin, vec: [1, 2, 3]
+```
+
+### Show Bits 
+
+UP provides `pre_bin`, `pre_oct`, `pre_dec`, and `pre_hex` to show a number in different forms.
 
 ### Ensurance of No Data Movement
 
